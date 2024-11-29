@@ -1,34 +1,20 @@
 package com.tmv.inbound.teltonika.model;
 
+import lombok.Getter;
+
 import java.util.List;
 
 public class IoElement {
-    private final int eventId;
-    private final int propertiesCount;
-    private final List<IoProperty> properties;
-    private final Byte originType; // Using Byte to replicate nullable byte in C#
+    @Getter private final int eventId;
+    @Getter private final int propertiesCount;
+    @Getter private final List<IoProperty> properties;
+    @Getter private final Byte originType; // Using Byte to replicate nullable byte in C#
 
     private IoElement(int eventId, int propertiesCount, List<IoProperty> properties, Byte originType) {
         this.eventId = eventId;
         this.propertiesCount = propertiesCount;
         this.properties = properties;
         this.originType = originType;
-    }
-
-    public int getEventId() {
-        return eventId;
-    }
-
-    public int getPropertiesCount() {
-        return propertiesCount;
-    }
-
-    public List<IoProperty> getProperties() {
-        return properties;
-    }
-
-    public Byte getOriginType() {
-        return originType;
     }
 
     public static IoElement create(int eventId, int propertiesCount, List<IoProperty> properties, Byte originType) {

@@ -1,11 +1,20 @@
 package com.tmv.inbound.teltonika.model;
 
+import lombok.Getter;
+
 import java.util.Date;
 
 public class AvlData {
+    @Getter
     private final int priority;
+
+    @Getter
     private final Date dateTime;
+
+    @Getter
     private final GpsElement gpsElement;
+
+    @Getter
     private final IoElement ioElement;
 
     private AvlData(int priority, Date dateTime, GpsElement gpsElement, IoElement ioElement) {
@@ -13,22 +22,6 @@ public class AvlData {
         this.dateTime = dateTime;
         this.gpsElement = gpsElement;
         this.ioElement = ioElement;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public Date getDateTime() {
-        return dateTime;
-    }
-
-    public GpsElement getGpsElement() {
-        return gpsElement;
-    }
-
-    public IoElement getIoElement() {
-        return ioElement;
     }
 
     public static AvlData create(int priority, Date dateTime, GpsElement gpsElement, IoElement ioElement) {
