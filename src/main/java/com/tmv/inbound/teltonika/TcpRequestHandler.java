@@ -49,7 +49,7 @@ public class TcpRequestHandler implements RequestHandler {
      */
     private  void readAVLPacket (Socket clientSocket) throws IOException {
         try (DataInputStream dataIn = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-             DataOutputStream dataOut = new DataOutputStream(clientSocket.getOutputStream());) {
+             DataOutputStream dataOut = new DataOutputStream(clientSocket.getOutputStream())) {
             log.info("Reading AVL Data Packet");
 
             String imei = authorizeIMEI(dataOut, dataIn);
@@ -96,8 +96,8 @@ public class TcpRequestHandler implements RequestHandler {
         log.debug("Reading IMEI ");
         String IMEI=null;
         try {
-            byte[] imeiArrSample=new byte[17];
-            imeiArrSample = dataIn.readNBytes(17);
+            byte[] imeiArrSample;
+            imeiArrSample = dataIn.readNBytes(nrOfIMEBytes);
             log.debug("Read value : {}", bytesToHex(imeiArrSample,imeiArrSample.length));
             IMEI =new String(imeiArrSample,2, 15);
             log.debug("Received IMEI : {}", IMEI);
