@@ -15,8 +15,7 @@ import java.net.Socket;
 public class TcpServer implements Runnable {
     //private static final Logger logger = LoggerFactory.getLogger(TcpServer.class);
 
-    @Setter
-    private int port;
+    @Setter private int port;
 
     @Autowired
     RequestHandler requestHandler;
