@@ -4,7 +4,6 @@ import com.tmv.inbound.RequestHandler;
 import com.tmv.inbound.teltonika.model.TcpDataPacket;
 import jakarta.transaction.NotSupportedException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.*;
