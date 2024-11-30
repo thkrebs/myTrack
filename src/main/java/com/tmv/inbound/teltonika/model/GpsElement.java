@@ -5,8 +5,8 @@ import lombok.Getter;
 public class GpsElement {
     public static final short INVALID_GPS_SPEED = 255;
 
-    @Getter private float x;
-    @Getter private float y;
+    @Getter private float lng;
+    @Getter private float lat;
     @Getter private short altitude;
     @Getter private short angle;
     @Getter private byte satellites;
@@ -16,9 +16,9 @@ public class GpsElement {
         // Default constructor for GpsElement.Default
     }
 
-    private GpsElement(float x, float y, short altitude, short speed, short angle, byte satellites) {
-        this.x = x;
-        this.y = y;
+    private GpsElement(float lng, float lat, short altitude, short speed, short angle, byte satellites) {
+        this.lng = lng;
+        this.lat = lat;
         this.altitude = altitude;
         this.angle = angle;
         this.satellites = satellites;
@@ -27,8 +27,8 @@ public class GpsElement {
 
     public static final GpsElement DEFAULT = new GpsElement();
 
-    public static GpsElement create(float x, float y, short altitude, short speed, short angle, byte satellites) {
-        return new GpsElement(x, y, altitude, speed, angle, satellites);
+    public static GpsElement create(float lng, float lat, short altitude, short speed, short angle, byte satellites) {
+        return new GpsElement(lng, lat, altitude, speed, angle, satellites);
     }
 
     public static boolean isLatValid(double latitude) {

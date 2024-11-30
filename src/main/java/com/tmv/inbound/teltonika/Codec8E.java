@@ -48,8 +48,8 @@ public class Codec8E {
 
         // GPS element decoding
         GpsElement gpsElement = decodeGpsElement();
-        log.debug("x: {}, y: {}, speed: {}, alt: {}, angle: {}, satellites: {}",
-                    gpsElement.getX(), gpsElement.getY(), gpsElement.getSpeed(),
+        log.debug("lng: {}, lat: {}, speed: {}, alt: {}, angle: {}, satellites: {}",
+                    gpsElement.getLng(), gpsElement.getLat(), gpsElement.getSpeed(),
                     gpsElement.getAltitude(), gpsElement.getAngle(), gpsElement.getSatellites());
 
         // IO Element decoding
