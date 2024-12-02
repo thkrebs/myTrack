@@ -99,7 +99,7 @@ public class TcpRequestHandler implements RequestHandler {
             byte[] imeiArrSample;
             imeiArrSample = dataIn.readNBytes(nrOfIMEBytes);
             log.debug("Read value : {}", bytesToHex(imeiArrSample,imeiArrSample.length));
-            IMEI =new String(imeiArrSample,2, 15);
+            IMEI =new String(imeiArrSample,2, nrOfIMEBytes-2);
             log.debug("Received IMEI : {}", IMEI);
         } catch (IOException e) {
             log.error("Error while reading IMEI : ",e);
