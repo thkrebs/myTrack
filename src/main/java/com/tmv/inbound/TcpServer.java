@@ -11,14 +11,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 @Slf4j
-@Component
 public class TcpServer implements Runnable {
     //private static final Logger logger = LoggerFactory.getLogger(TcpServer.class);
 
     @Setter private int port;
 
-    @Autowired
-    RequestHandler requestHandler;
+    private final RequestHandler requestHandler;
+    public TcpServer(RequestHandler requestHandler) {
+        this.requestHandler = requestHandler;
+    }
 
 
     @Override

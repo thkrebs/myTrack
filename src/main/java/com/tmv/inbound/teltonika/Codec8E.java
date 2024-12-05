@@ -94,7 +94,7 @@ public class Codec8E {
         for (int i = 0; i < ioCountInt16; i++) {
             short propertyId = reader.readShort();
             long value = reader.readShort();
-            log.debug("decoded propertyId {} : {}", propertyId, value);
+            log.debug("decoded propertyId (2 bytes) {} : {}", propertyId, value);
             result.add(IoProperty.create(propertyId, value));
         }
 
@@ -103,7 +103,7 @@ public class Codec8E {
         for (int i = 0; i < ioCountInt32; i++) {
             short propertyId = reader.readShort();
             long value = reader.readInt();
-            log.debug("decoded propertyId {} : {}", propertyId, value);
+            log.debug("decoded propertyId (4 bytes) {} : {}", propertyId, value);
             result.add(IoProperty.create(propertyId, value));
         }
 
@@ -112,7 +112,7 @@ public class Codec8E {
         for (int i = 0; i < ioCountInt64; i++) {
             short propertyId = reader.readShort();
             long value = reader.readLong();
-            log.debug("decoded propertyId {} : {}", propertyId, value);
+            log.debug("decoded propertyId (8 bytes) {} : {}", propertyId, value);
             result.add(IoProperty.create(propertyId, value));
         }
 
@@ -122,7 +122,7 @@ public class Codec8E {
             int elementLength = reader.readShort();
             byte[] value = new byte[elementLength];
             value = reader.readNBytes(elementLength);
-            log.debug("decoded multibyte propertyId {}", propertyId);
+            log.debug("decoded multibyte propertyId (byte array) {}", propertyId);
             result.add(IoProperty.create(propertyId, value));
         }
         return result;

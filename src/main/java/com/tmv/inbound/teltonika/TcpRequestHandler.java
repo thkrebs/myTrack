@@ -1,14 +1,20 @@
 package com.tmv.inbound.teltonika;
 
+import com.tmv.inbound.NewTcpDataPacketEvent;
 import com.tmv.inbound.RequestHandler;
 import com.tmv.inbound.teltonika.model.TcpDataPacket;
 import jakarta.transaction.NotSupportedException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.net.Socket;
+
 @Slf4j
+//@Component
 public class TcpRequestHandler implements RequestHandler {
     static final int UNKNOWN_DEVICE = (byte)0x00;
     static final int DEVICE_EXISTS  = (byte)0x01;
@@ -18,10 +24,18 @@ public class TcpRequestHandler implements RequestHandler {
     @Value( "${nrOfIMEBytes}")
     private int nrOfIMEBytes;    // number of bytes representing the IMEI
 
+    private final ApplicationEventPublisher publisher;
+
+    public TcpRequestHandler(ApplicationEventPublisher publisher) {
+        this.publisher = publisher;
+    }
+
     @Override
     public void run() {
         try {
-            readAVLPacket(clientSocket);
+            TcpDataPacket tp = readAVLPacket(clientSocket);
+            publishTcpDataPacket(tp);
+
         } catch (IOException e) {
             log.error("Error while reading AVL packet", e);
         } finally {
@@ -47,7 +61,7 @@ public class TcpRequestHandler implements RequestHandler {
      * @param clientSocket
      * @throws IOException
      */
-    private  void readAVLPacket (Socket clientSocket) throws IOException {
+    private TcpDataPacket readAVLPacket (Socket clientSocket) throws IOException {
         try (DataInputStream dataIn = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
              DataOutputStream dataOut = new DataOutputStream(clientSocket.getOutputStream())) {
             log.info("Reading AVL Data Packet");
@@ -61,9 +75,15 @@ public class TcpRequestHandler implements RequestHandler {
 
             log.info("Reply with count of packages received {}", tp.getAvlData().getDataCount());
             dataOut.writeShort((short)tp.getAvlData().getDataCount());
+            return tp;
         } catch (NotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void publishTcpDataPacket(TcpDataPacket tp) {
+        log.debug("Publishing tcpDataPacket event");
+        this.publisher.publishEvent(new NewTcpDataPacketEvent(this, tp));
     }
 
     private String authorizeIMEI(DataOutputStream dataOut, DataInputStream dataIn) {
