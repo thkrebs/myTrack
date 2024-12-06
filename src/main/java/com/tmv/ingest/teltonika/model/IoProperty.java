@@ -2,10 +2,11 @@ package com.tmv.ingest.teltonika.model;
 
 import lombok.Getter;
 
+@Getter
 public class IoProperty {
-    @Getter private short id;
-    @Getter private final Long value; // Using Long to replicate nullable long in C#
-    @Getter private final byte[] arrayValue;
+    private final short id;
+    private final Long value; // Using Long to replicate nullable long in C#
+    private final byte[] arrayValue;
 
     private IoProperty(short id, Long value, byte[] arrayValue) {
         this.id = id;
