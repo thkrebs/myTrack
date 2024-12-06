@@ -3,13 +3,14 @@ package com.tmv.ingest.teltonika.model;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
 public class TcpDataPacket {
-    @Getter private final int preamble;
-    @Getter private final int length;
-    @Getter private final int crc;
-    @Getter private final AvlDataCollection avlData;
-    @Getter private final int codecId;
-    @Getter @Setter
+    private final int preamble;
+    private final int length;
+    private final int crc;
+    private final AvlDataCollection avlData;
+    private final int codecId;
+    @Setter
     private String imei;
 
     private TcpDataPacket(int preamble, int length, int crc, int codecId, AvlDataCollection avlDataCollection) {
