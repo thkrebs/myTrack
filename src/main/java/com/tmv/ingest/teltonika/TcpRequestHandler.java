@@ -1,10 +1,12 @@
 package com.tmv.ingest.teltonika;
 
+import com.tmv.core.service.imei.ImeiValidationService;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.RequestHandler;
 import com.tmv.ingest.teltonika.model.TcpDataPacket;
 import jakarta.transaction.NotSupportedException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -19,13 +21,15 @@ public class TcpRequestHandler implements RequestHandler {
 
     private Socket clientSocket;
 
-    @Value( "${nrOfIMEBytes}")
-    private int nrOfIMEBytes;    // number of bytes representing the IMEI
+    // number of bytes representing the IMEI
+    private final int nrOfIMEBytes=17;
 
     private final ApplicationEventPublisher publisher;
+    public final ImeiValidationService imeiValidationService;
 
-    public TcpRequestHandler(ApplicationEventPublisher publisher) {
+    public TcpRequestHandler(ApplicationEventPublisher publisher, ImeiValidationService imeiValidationService) {
         this.publisher = publisher;
+        this.imeiValidationService = imeiValidationService;
     }
 
     @Override
@@ -125,10 +129,10 @@ public class TcpRequestHandler implements RequestHandler {
         return IMEI;
     }
 
-    private int sendIMEIReadResponse(DataOutputStream dataOut, String IMEI) throws IOException {
+    private int sendIMEIReadResponse(DataOutputStream dataOut, String imei) throws IOException {
 
         byte response;
-        if(IMEI.equals("866069064483413")){
+        if(imeiValidationService.isActive(imei)){
              response = DEVICE_EXISTS;
         } else {
             response = UNKNOWN_DEVICE;

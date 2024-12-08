@@ -1,14 +1,17 @@
 package com.tmv.ingest.teltonika;
 
+import com.tmv.core.service.imei.ImeiValidationService;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.RequestHandler;
 import com.tmv.ingest.teltonika.model.TcpDataPacket;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
@@ -18,25 +21,36 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 
 @SpringBootTest
 @Component
-//@TestPropertySource(locations="application-test.properties")
+@ComponentScan(basePackages = "com.tmv")
 public class TcpRequestHandlerTest {
 
     @Mock
     private Socket socket;
 
     @Autowired
+    private ApplicationContext context;
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @Spy
+    private ImeiValidationService imeiValidationService;
+
     RequestHandler requestHandler;
 
     private final String VALID_IMEI  ="000F383636303639303634343833343133";
     private final String INVALID_IMEI="000F383636303639303634343833343134";
 
+
     @BeforeEach
     public void setUp() {
+        requestHandler = new TcpRequestHandler(publisher,imeiValidationService);
         MockitoAnnotations.openMocks(this);
     }
 
@@ -60,6 +74,7 @@ public class TcpRequestHandlerTest {
 
         when(socket.getInputStream()).thenReturn(in);
         when(socket.getOutputStream()).thenReturn(out);
+        when(imeiValidationService.isActive(anyString())).thenReturn(true);
 
         //requestHandler = spy(requestHandler);
         requestHandler.setSocket(socket);
@@ -104,6 +119,7 @@ public class TcpRequestHandlerTest {
         Exception exception = assertThrows(RuntimeException.class, () -> {
             when(socket.getInputStream()).thenReturn(in);
             when(socket.getOutputStream()).thenReturn(out);
+            when(imeiValidationService.isActive(anyString())).thenReturn(true);
 
             requestHandler.setSocket(socket);
             requestHandler.run();

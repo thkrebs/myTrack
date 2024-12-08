@@ -16,6 +16,7 @@
 
        @Override
        public boolean isActive(String imei) {
-           return imeiRepository.findByImei(imei).isActive();
+           var imeiRecord = imeiRepository.findByImei(imei);
+           return imeiRecord != null && imeiRecord.isActive();
        }
    }

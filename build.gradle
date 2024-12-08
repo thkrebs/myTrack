@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.3.5'
 	id 'io.spring.dependency-management' version '1.1.6'
 	id "io.freefair.lombok" version '8.11'
+	id 'org.liquibase.gradle' version '2.2.0'
 }
 
 group = 'com.tmv'
@@ -24,11 +25,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation "org.springframework.boot:spring-boot-starter-log4j2"
-		modules {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	modules {
 			module("org.springframework.boot:spring-boot-starter-logging") {
 				replacedBy("org.springframework.boot:spring-boot-starter-log4j2", "Use Log4j2 instead of Logback")
 		}
 	}
+	implementation 'org.liquibase:liquibase-core:4.30.0'
 	compileOnly 'org.projectlombok:lombok:1.18.36'
 	annotationProcessor 'org.projectlombok:lombok:1.18.36'
 	runtimeOnly 'com.h2database:h2'
@@ -36,9 +39,19 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core'
+
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 }
+
+dependencies {
+	liquibaseRuntime 'org.liquibase:liquibase-core:4.30.0'
+	liquibaseRuntime 'org.liquibase:liquibase-groovy-dsl:2.1.1'
+	liquibaseRuntime 'info.picocli:picocli:4.7.5'
+	liquibaseRuntime 'org.yaml:snakeyaml:1.33'
+	liquibaseRuntime 'com.h2database:h2'
+}
+apply plugin: "org.liquibase.gradle"
 
 test {
 	beforeTest { descriptor ->
@@ -46,7 +59,17 @@ test {
 	}
 }
 
-
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+liquibase {
+	activities {
+		main {
+			changelogFile "./db.changelog-master.sql"
+			url "jdbc:h2:mem:testdb"
+			username "sa"
+			password "password"
+		}
+	}
 }

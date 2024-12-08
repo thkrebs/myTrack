@@ -11,4 +11,5 @@ public class CoreConfiguration {
     PositionDataEventListener getPositionDataEventListener() {
         return new PositionDataEventListener();
     }
+
 }
