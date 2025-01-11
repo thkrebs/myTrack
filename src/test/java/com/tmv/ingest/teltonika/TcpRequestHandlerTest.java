@@ -1,17 +1,20 @@
 package com.tmv.ingest.teltonika;
 
-import com.tmv.core.service.imei.ImeiValidationService;
+import com.tmv.core.service.ImeiValidationService;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.RequestHandler;
 import com.tmv.ingest.teltonika.model.TcpDataPacket;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
@@ -28,6 +31,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @Component
 @ComponentScan(basePackages = "com.tmv")
+@PropertySource("classpath:application.properties")
 public class TcpRequestHandlerTest {
 
     @Mock
@@ -72,6 +76,7 @@ public class TcpRequestHandlerTest {
         // Prepare outputstream
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
+
         when(socket.getInputStream()).thenReturn(in);
         when(socket.getOutputStream()).thenReturn(out);
         when(imeiValidationService.isActive(anyString())).thenReturn(true);
@@ -82,7 +87,7 @@ public class TcpRequestHandlerTest {
 
         byte[] responseBytes = out.toByteArray();
         assertEquals(1, responseBytes[0], "Response for valid IMEI should be one");
-        assertEquals(19, byte2Short(responseBytes[1],responseBytes[2]), "handler should send the number of received data packets");
+        assertEquals(19, byte2Int(responseBytes[1],responseBytes[2],responseBytes[3], responseBytes[4]), "handler should send the number of received data packets");
         assertNotNull(tcpDataPacketRvc, "packet should have been received by listener");
         assertEquals(19,tcpDataPacketRvc.getAvlData().getDataCount(),"test data has 19 data packets");
     }
@@ -145,6 +150,14 @@ public class TcpRequestHandlerTest {
         return bb.getShort(0);
     }
 
+    private int byte2Int(byte firstByte, byte secondByte, byte thirdByte, byte fourthByte) {
+        ByteBuffer bb = ByteBuffer.allocate(4);
+        bb.put(firstByte);
+        bb.put(secondByte);
+        bb.put(thirdByte);
+        bb.put(fourthByte);
+        return bb.getInt(0);
+    }
     public static byte[] hexStringToByteArray(String hex) {
         int length = hex.length();
         byte[] byteArray = new byte[length / 2];

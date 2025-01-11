@@ -1,6 +1,6 @@
-   package com.tmv.core.service.imei;
+   package com.tmv.core.service;
 
-   import com.tmv.core.persistence.imei.ImeiRepository;
+   import com.tmv.core.persistence.ImeiRepository;
    import org.springframework.beans.factory.annotation.Autowired;
    import org.springframework.stereotype.Service;
 

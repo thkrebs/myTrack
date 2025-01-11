@@ -67,6 +67,7 @@ public class Codec8E {
      * Decode Gps element
      */
     private GpsElement decodeGpsElement() throws IOException {
+        final float divisor =  10000000L; // shift
         int longitude = reader.readInt();
         int latitude = reader.readInt();
         short altitude = reader.readShort();
@@ -74,7 +75,7 @@ public class Codec8E {
         byte satellites = reader.readByte();
         short speed = reader.readShort();
 
-        return GpsElement.create(longitude, latitude, altitude, speed, angle, satellites);
+        return GpsElement.create(longitude/divisor, latitude/divisor, altitude, speed, angle, satellites);
     }
 
     private List<IoProperty> decodeIoProperties() throws IOException {

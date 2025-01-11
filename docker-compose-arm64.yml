@@ -1,0 +1,46 @@
+version: '3.3'
+services:
+   postgres:
+      image: thkrebs/rpi-postgresql-postgis:15-3.4-alpine-arm64
+      restart: always
+      volumes:
+         - /home/tom/myTrack/db:/var/lib/postgresql/data/myTrack/
+      ports:
+         - 5432:5432
+      environment:
+         - PGDATA=/var/lib/postgresql/data/myTrack/
+         - POSTGRES_USER=${DB_USER}
+         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      healthcheck:
+         test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -p 5432"]
+         interval: 10s
+         retries: 5
+         start_period: 30s
+         timeout: 10s
+   pgadmin4:
+      image: dpage/pgadmin4
+      container_name: pgadmin4
+      ports:
+         - '5050:80'
+      environment:
+         PGADMIN_DEFAULT_EMAIL: thkrebs@gmail.com 
+         PGADMIN_DEFAULT_PASSWORD: admin 
+      links:
+         - postgres
+
+   mytrack:
+      image: thkrebs/my-track:latest
+      restart: always
+      depends_on:
+         postgres:
+            condition: service_healthy
+      ports:
+         - 8080:8080
+         - 8443:8443
+         - 5677:5677
+      environment:
+         - DB_HOST=postgres
+         - DB_USER=${DB_USER}
+         - DB_PWD=${POSTGRES_PASSWORD}
+         - DB_PORT=5432
+

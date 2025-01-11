@@ -1,4 +1,4 @@
-package com.tmv.core.controller.position;
+package com.tmv.core.service;
 
 public class PositionNotFoundException extends RuntimeException {
 

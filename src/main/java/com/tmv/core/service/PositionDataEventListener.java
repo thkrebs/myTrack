@@ -1,7 +1,7 @@
-package com.tmv.core.controller.position;
+package com.tmv.core.service;
 
-import com.tmv.core.model.position.Position;
-import com.tmv.core.persistence.position.PositionRepository;
+import com.tmv.core.model.Position;
+import com.tmv.core.persistence.PositionRepository;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.teltonika.model.AvlData;
 import com.tmv.ingest.teltonika.model.GpsElement;
@@ -22,6 +22,7 @@ public class PositionDataEventListener {
     @EventListener
     public void handle(NewTcpDataPacketEvent event) {
         assert(repository != null);
+        log.debug("New event handler called");
 
         String imei = event.getDataPacket().getImei();
         for (AvlData element : event.getDataPacket().getAvlData().getData()) {

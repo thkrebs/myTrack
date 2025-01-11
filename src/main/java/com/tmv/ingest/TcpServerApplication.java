@@ -6,9 +6,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
-
 
 @EnableAsync
 @SpringBootApplication(scanBasePackages={"com.tmv"})
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TcpServerApplication implements CommandLineRunner {
 
-    @Value("${port}")
+    @Value("${TCP_Port}")
     private int port;
 
     @Autowired

@@ -3,11 +3,41 @@ plugins {
 	id 'org.springframework.boot' version '3.3.5'
 	id 'io.spring.dependency-management' version '1.1.6'
 	id "io.freefair.lombok" version '8.11'
-	id 'org.liquibase.gradle' version '2.2.0'
+	id("com.gradleup.shadow") version "8.3.5"
+	id 'com.google.cloud.tools.jib' version '3.4.4'
 }
+
 
 group = 'com.tmv'
 version = '0.0.1-SNAPSHOT'
+
+
+jib {
+	from {
+		image = 'azul/zulu-openjdk:23-latest'
+		platforms {
+			platform {
+				architecture = 'arm64'
+				os = 'linux'
+			}
+		}
+	}
+
+
+	to {
+		image = 'thkrebs/my-track'
+		tags = ["${version}", 'latest']
+		credHelper = 'osxkeychain'
+	}
+
+	container {
+		environment = ['DB_HOST': 'postgres', 'DB_PORT': '5432', 'DB_USER': 'postgres', 'DB_PWD': 'some', 'spring.profiles.active':'prod']
+		//jvmFlags = ['-Xms512m', '-Xdebug']
+		mainClass = 'com.tmv.ingest.TcpServerApplication'
+		ports = ['8080', '8443', '5677']
+		//labels = [key1:'value1', key2:'value2']
+	}
+}
 
 java {
 	toolchain {
@@ -31,27 +61,24 @@ dependencies {
 				replacedBy("org.springframework.boot:spring-boot-starter-log4j2", "Use Log4j2 instead of Logback")
 		}
 	}
-	implementation 'org.liquibase:liquibase-core:4.30.0'
+	implementation 'org.hibernate.orm:hibernate-spatial:6.4.1.Final'
+	implementation 'org.locationtech.jts:jts:1.20.0'
+	implementation("org.n52.jackson:jackson-datatype-jts:1.2.10")
 	compileOnly 'org.projectlombok:lombok:1.18.36'
 	annotationProcessor 'org.projectlombok:lombok:1.18.36'
-	runtimeOnly 'com.h2database:h2'
 	testCompileOnly 'org.projectlombok:lombok:1.18.36'
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core'
-
+	runtimeOnly 'org.postgresql:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 }
 
-dependencies {
-	liquibaseRuntime 'org.liquibase:liquibase-core:4.30.0'
-	liquibaseRuntime 'org.liquibase:liquibase-groovy-dsl:2.1.1'
-	liquibaseRuntime 'info.picocli:picocli:4.7.5'
-	liquibaseRuntime 'org.yaml:snakeyaml:1.33'
-	liquibaseRuntime 'com.h2database:h2'
+bootBuildImage {
+	imageName = "docker.io/thkrebs/my-track"
 }
-apply plugin: "org.liquibase.gradle"
 
 test {
 	beforeTest { descriptor ->
@@ -61,15 +88,17 @@ test {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	test.systemProperty 'spring.profiles.active', 'dev'
 }
 
-liquibase {
-	activities {
-		main {
-			changelogFile "./db.changelog-master.sql"
-			url "jdbc:h2:mem:testdb"
-			username "sa"
-			password "password"
-		}
-	}
+gradle.taskGraph.whenReady { taskGraph ->
+	println "Welcome to the build system. Starting build process..."
 }
+
+// there is probably a better way instead of having two statements
+tasks.matching { it.name.startsWith('bootRun') }.configureEach {
+		doFirst {
+			args = ["--spring.profiles.active=${project.properties['profile'] ?: 'prod'}"]
+		}
+}
+
