@@ -1,12 +1,13 @@
 package com.tmv.ingest.teltonika;
 
-import com.tmv.ingest.teltonika.model.*;
+import com.tmv.ingest.teltonika.model.AvlDataCollection;
+import com.tmv.ingest.teltonika.model.CRC;
+import com.tmv.ingest.teltonika.model.TcpDataPacket;
 import jakarta.transaction.NotSupportedException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
 @Slf4j
 public class DataDecoder {

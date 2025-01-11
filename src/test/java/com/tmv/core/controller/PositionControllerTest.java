@@ -7,20 +7,17 @@ import com.tmv.core.service.ImeiValidationService;
 import com.tmv.core.service.PositionService;
 import com.tmv.core.service.PositionServiceImpl;
 import com.tmv.core.util.MultiFormatDateParser;
-import net.bytebuddy.asm.Advice;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,8 +26,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import static com.fasterxml.jackson.databind.type.LogicalType.DateTime;
-import static jakarta.xml.bind.DatatypeConverter.parseDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -79,9 +74,6 @@ public class PositionControllerTest {
 
     @Test
     void shouldReturnLastPositionNotEmpty() throws Exception {
-        ZonedDateTime zdt = ZonedDateTime.ofInstant(dt.toInstant(), ZoneId.of("UTC"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-        //DateTimeFormatter formatter  = DateTimeFormatter.ISO_DATE_TIME;
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of(position));
         Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
@@ -94,7 +86,7 @@ public class PositionControllerTest {
                 .andExpect(jsonPath("$.*.speed").value(4))
                 .andExpect(jsonPath("$.*.imei").value(imei));
                 //.andExpect(jsonPath("$.*.dateTime").value(dt.toString()));
-        ; // Validate ;
+         // Validate ;
     }
 
     @Test
@@ -105,7 +97,7 @@ public class PositionControllerTest {
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isEmpty());
-        ; // Validate ;
+         // Validate ;
     }
 
     @Test
@@ -115,7 +107,7 @@ public class PositionControllerTest {
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
-        ; // Validate ;
+         // Validate ;
     }
 
     @Test
@@ -126,7 +118,7 @@ public class PositionControllerTest {
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
-        ; // Validate ;
+         // Validate ;
     }
 
     @Test
@@ -137,7 +129,7 @@ public class PositionControllerTest {
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
-        ; // Validate ;
+         // Validate ;
     }
 
     @Test
@@ -149,6 +141,6 @@ public class PositionControllerTest {
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
-        ; // Validate ;
+        // Validate ;
     }
 }

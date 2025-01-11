@@ -1,16 +1,13 @@
 package com.tmv.core.service;
 
 import com.tmv.core.model.Position;
-import com.tmv.core.model.Track;
 import com.tmv.core.persistence.PositionRepository;
-import org.springframework.stereotype.Service;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class TrackServiceImpl implements TrackService {
