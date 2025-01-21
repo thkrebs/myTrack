@@ -1,13 +1,19 @@
 package com.tmv.core.controller;
 
+import com.tmv.core.model.Imei;
 import com.tmv.core.model.Position;
 import com.tmv.core.service.PositionServiceImpl;
+import com.tmv.core.service.ResourceNotFoundException;
 import com.tmv.core.util.MultiFormatDateParser;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 @Slf4j
 @RestController
@@ -28,31 +34,7 @@ class PositionController extends BaseController {
     // tag::get-aggregate-root[]
     @GetMapping("/api/v1/imei/{imei}/positions")
     Iterable<Position> all(@PathVariable String imei, @RequestParam(required = false) Map<String, String> params, @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        Iterable<Position> result = null;
-
-        if (params.containsKey("from")) {
-            String fromDate = params.get("from");
-            LocalDateTime fromDateTime = MultiFormatDateParser.parseDate(fromDate);
-            LocalDateTime toDateTime = null;
-
-            if (params.containsKey("to")) {
-                String toDate = params.get("to");
-                toDateTime = MultiFormatDateParser.parseDate(toDate);
-                result = positionService.findBetween(imei,fromDateTime,toDateTime);
-            }
-            else {
-                result = positionService.findBetween(imei,fromDateTime,null);
-            }
-        }
-        else if (params.containsKey("to")) {
-            String toDate = params.get("to");
-            LocalDateTime toDateTime = MultiFormatDateParser.parseDate(toDate);
-            result = positionService.findBetween(imei,null,toDateTime);
-        }
-        else {
-            result = positionService.findAll(imei);
-        }
-       return result;
+        return findPositions(imei, params);
     }
     // end::get-aggregate-root[]
 
@@ -80,5 +62,21 @@ class PositionController extends BaseController {
         positionService.deletePosition(id);
     }
 
+
+    private Iterable<Position> findPositions(String imei, Map<String, String> params) {
+        if (params.containsKey("from")) {
+            LocalDateTime fromDateTime = MultiFormatDateParser.parseDate(params.get("from"));
+            LocalDateTime toDateTime = params.containsKey("to")
+                    ? MultiFormatDateParser.parseDate(params.get("to"))
+                    : null;
+            return positionService.findBetween(imei, fromDateTime, toDateTime);
+        }
+
+        if (params.containsKey("to")) {
+            LocalDateTime toDateTime = MultiFormatDateParser.parseDate(params.get("to"));
+            return positionService.findBetween(imei, null, toDateTime);
+        }
+        return positionService.findAll(imei);
+    }
 
 }

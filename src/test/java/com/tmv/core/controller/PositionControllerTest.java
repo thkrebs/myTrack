@@ -3,7 +3,8 @@ package com.tmv.core.controller;
 
 import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.model.Position;
-import com.tmv.core.service.ImeiValidationService;
+import com.tmv.core.service.ImeiService;
+import com.tmv.core.service.ImeiServiceImpl;
 import com.tmv.core.service.PositionService;
 import com.tmv.core.service.PositionServiceImpl;
 import com.tmv.core.util.MultiFormatDateParser;
@@ -18,9 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -38,8 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(CoreConfiguration.class)
 public class PositionControllerTest {
 
-    @MockBean
-    ImeiValidationService imeiValidationService;
+    @MockBean(ImeiServiceImpl.class)
+    ImeiService imeiService;
 
     @MockBean(PositionServiceImpl.class)
     PositionService positionService;
@@ -57,7 +55,7 @@ public class PositionControllerTest {
 
 
     @Test
-    void contextLoads() throws Exception {
+    void contextLoads()  {
         assertThat(controller).isNotNull();
     }
 
@@ -65,7 +63,7 @@ public class PositionControllerTest {
     @Test
     public void testInvalidImei() throws Exception {
 
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(false);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(false);
 
         mockMvc.perform(get("/imei/123/positions/last"))
                 .andExpect(status().is4xxClientError());
@@ -75,7 +73,7 @@ public class PositionControllerTest {
     @Test
     void shouldReturnLastPositionNotEmpty() throws Exception {
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of(position));
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$.*.point.coordinates[0]").value(8)) // Validate specific JSON property (example field 'latitude')
@@ -93,7 +91,7 @@ public class PositionControllerTest {
     void shouldReturnLastPositionEmpty() throws Exception {
 
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of());
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isEmpty());
@@ -103,7 +101,7 @@ public class PositionControllerTest {
     @Test
     void shouldReturnAllPositions() throws Exception {
         Mockito.when(positionService.findAll(imei)).thenReturn(List.of(position));
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
@@ -114,7 +112,7 @@ public class PositionControllerTest {
     void shouldReturnAllPositionsUntilToDate() throws Exception {
         String dateTo = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei,null, MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
@@ -125,7 +123,7 @@ public class PositionControllerTest {
     void shouldReturnAllPositionsFromDate() throws Exception {
         String dateFrom = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), null)).thenReturn(List.of(position));
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
@@ -137,7 +135,7 @@ public class PositionControllerTest {
         String dateFrom = "04-08-2015 10:11";
         String dateTo = "05-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
-        Mockito.when(imeiValidationService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());

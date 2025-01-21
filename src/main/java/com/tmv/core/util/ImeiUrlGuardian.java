@@ -1,6 +1,6 @@
 package com.tmv.core.util;
 
-import com.tmv.core.service.ImeiValidationService;
+import com.tmv.core.service.ImeiService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -16,10 +16,10 @@ import java.util.Map;
 public class ImeiUrlGuardian implements HandlerInterceptor {
 
     @Autowired
-    public final ImeiValidationService imeiValidationService;
+    public final ImeiService imeiService;
 
-    public ImeiUrlGuardian(ImeiValidationService imeiValidationService) {
-        this.imeiValidationService = imeiValidationService;
+    public ImeiUrlGuardian(ImeiService imeiService) {
+        this.imeiService = imeiService;
     }
 
     @Override
@@ -29,7 +29,9 @@ public class ImeiUrlGuardian implements HandlerInterceptor {
             Object handler) throws Exception {
         final Map<String, String> pathVariables = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
         log.debug("pre-handle pathVariables: {}", pathVariables);
-        checkUrlVariables(pathVariables);
+        if (pathVariables != null) {
+            checkUrlVariables(pathVariables);
+        }
         return true;
     }
 
@@ -39,12 +41,12 @@ public class ImeiUrlGuardian implements HandlerInterceptor {
         }
     }
 
-    private boolean shouldCheckImei(Map<String, String> parameters) {
+    protected boolean shouldCheckImei(Map<String, String> parameters) {
         return parameters.containsKey("imei");
     }
 
     void checkAccess(String imei) {
-        if (!imeiValidationService.isActive(imei)) {
+        if (!imeiService.isActive(imei)) {
             throw new AccessViolationException("Inactive or unknown IMEI");
         }
     }

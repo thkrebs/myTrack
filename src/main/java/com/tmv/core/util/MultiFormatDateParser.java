@@ -1,5 +1,7 @@
 package com.tmv.core.util;
 
+import java.time.ZoneId;
+import java.util.Date;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -11,8 +13,9 @@ import java.util.List;
 public class MultiFormatDateParser {
 
     private static final List<DateTimeFormatter> formatters = new ArrayList<>();
+    private static final int DEFAULT_FORMATTER = 1;
 
-   static {
+    static {
        formatters.add(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")); // ISO mit Offset
        formatters.add(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));         // Standard Datum-Zeit
        formatters.add(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));           // Tag-Monat-Jahr mit Zeit
@@ -44,5 +47,13 @@ public class MultiFormatDateParser {
             }
         }
         throw new IllegalArgumentException("Unsupported date format: " + dateString);
+    }
+
+    public static String formatDate(LocalDateTime dateTime) {
+       return dateTime.format(formatters.get(DEFAULT_FORMATTER));
+    }
+
+    public static String formatDate(Date dt) {
+        return formatDate(dt.toInstant().atZone(ZoneId.of("UTC")).toLocalDateTime());
     }
 }

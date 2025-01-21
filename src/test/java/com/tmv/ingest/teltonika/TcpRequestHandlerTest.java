@@ -1,6 +1,6 @@
 package com.tmv.ingest.teltonika;
 
-import com.tmv.core.service.ImeiValidationService;
+import com.tmv.core.service.ImeiService;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.RequestHandler;
 import com.tmv.ingest.teltonika.model.TcpDataPacket;
@@ -44,7 +44,7 @@ public class TcpRequestHandlerTest {
     private ApplicationEventPublisher publisher;
 
     @Spy
-    private ImeiValidationService imeiValidationService;
+    private ImeiService imeiService;
 
     RequestHandler requestHandler;
 
@@ -54,7 +54,7 @@ public class TcpRequestHandlerTest {
 
     @BeforeEach
     public void setUp() {
-        requestHandler = new TcpRequestHandler(publisher,imeiValidationService);
+        requestHandler = new TcpRequestHandler(publisher, imeiService);
         MockitoAnnotations.openMocks(this);
     }
 
@@ -79,7 +79,7 @@ public class TcpRequestHandlerTest {
 
         when(socket.getInputStream()).thenReturn(in);
         when(socket.getOutputStream()).thenReturn(out);
-        when(imeiValidationService.isActive(anyString())).thenReturn(true);
+        when(imeiService.isActive(anyString())).thenReturn(true);
 
         //requestHandler = spy(requestHandler);
         requestHandler.setSocket(socket);
@@ -124,7 +124,7 @@ public class TcpRequestHandlerTest {
         Exception exception = assertThrows(RuntimeException.class, () -> {
             when(socket.getInputStream()).thenReturn(in);
             when(socket.getOutputStream()).thenReturn(out);
-            when(imeiValidationService.isActive(anyString())).thenReturn(true);
+            when(imeiService.isActive(anyString())).thenReturn(true);
 
             requestHandler.setSocket(socket);
             requestHandler.run();

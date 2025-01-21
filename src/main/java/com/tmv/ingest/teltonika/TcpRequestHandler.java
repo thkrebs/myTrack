@@ -1,6 +1,6 @@
 package com.tmv.ingest.teltonika;
 
-import com.tmv.core.service.ImeiValidationService;
+import com.tmv.core.service.ImeiService;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.RequestHandler;
 import com.tmv.ingest.teltonika.model.TcpDataPacket;
@@ -26,11 +26,11 @@ public class TcpRequestHandler implements RequestHandler {
     private final int nrOfIMEBytes = 17;
 
     private final ApplicationEventPublisher publisher;
-    public final ImeiValidationService imeiValidationService;
+    public final ImeiService imeiService;
 
-    public TcpRequestHandler(ApplicationEventPublisher publisher, ImeiValidationService imeiValidationService) {
+    public TcpRequestHandler(ApplicationEventPublisher publisher, ImeiService imeiService) {
         this.publisher = publisher;
-        this.imeiValidationService = imeiValidationService;
+        this.imeiService = imeiService;
     }
 
     @Override
@@ -140,7 +140,7 @@ public class TcpRequestHandler implements RequestHandler {
 
     private int sendIMEIReadResponse(DataOutputStream dataOut, String imei) throws IOException {
         byte response;
-        if (imeiValidationService.isActive(imei)) {
+        if (imeiService.isActive(imei)) {
             response = DEVICE_EXISTS;
         } else {
             response = UNKNOWN_DEVICE;
