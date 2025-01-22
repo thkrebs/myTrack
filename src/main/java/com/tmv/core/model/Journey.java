@@ -1,6 +1,7 @@
 package com.tmv.core.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,7 +35,8 @@ public class Journey {
             inverseJoinColumns = @JoinColumn(name = "imei_id"))
     private Set<Imei> trackedByImeis;
 
-    @OneToMany(mappedBy = "journey")
+    @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     Set<OvernightParking> overnightParkings;
 
 }

@@ -26,6 +26,6 @@ public class ParkSpot {
     @Column(name = "point", columnDefinition = "geometry(Point, 4326)", nullable = false)
     private Point point;
 
-    @OneToMany(mappedBy = "parkSpot", cascade=CascadeType.ALL, orphanRemoval = true )
+    @OneToMany(mappedBy = "parkSpot", orphanRemoval = true )
     Set<OvernightParking> overnightParkings;
 }

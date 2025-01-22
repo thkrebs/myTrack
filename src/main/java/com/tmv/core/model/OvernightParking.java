@@ -1,5 +1,6 @@
 package com.tmv.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,8 +20,9 @@ public class OvernightParking {
     @Id
     Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journey_id")
+    @JsonBackReference
     Journey journey;
 
     @ManyToOne
