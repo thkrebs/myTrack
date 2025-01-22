@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -21,7 +20,6 @@ public class Journey {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long id;
     private String description;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -35,5 +33,8 @@ public class Journey {
             joinColumns = @JoinColumn(name = "journey_id"),
             inverseJoinColumns = @JoinColumn(name = "imei_id"))
     private Set<Imei> trackedByImeis;
+
+    @OneToMany(mappedBy = "journey")
+    Set<OvernightParking> overnightParkings;
 
 }
