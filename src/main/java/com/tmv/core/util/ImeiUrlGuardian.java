@@ -1,5 +1,6 @@
 package com.tmv.core.util;
 
+import com.tmv.core.exception.AccessViolationException;
 import com.tmv.core.service.ImeiService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

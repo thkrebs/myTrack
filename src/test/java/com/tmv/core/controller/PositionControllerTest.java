@@ -19,9 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +47,7 @@ public class PositionControllerTest {
     private PositionController controller;
 
     final String imei = "123";
-    final Date dt = new GregorianCalendar(2023, Calendar.OCTOBER, 31).getTime();
+    final LocalDateTime dt = LocalDateTime.now();
 
     final Position position = new Position(8f,50f, (short) 1, (short) 2, (byte) 3, (short) 4,imei,dt);
 
@@ -74,10 +72,10 @@ public class PositionControllerTest {
     void shouldReturnLastPositionNotEmpty() throws Exception {
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
-                .andExpect(jsonPath("$.*.point.coordinates[0]").value(8)) // Validate specific JSON property (example field 'latitude')
-                .andExpect(jsonPath("$.*.point.coordinates[1]").value(50))
+                .andExpect(jsonPath("$.*.lat").value(8.0)) // Validate specific JSON property (example field 'latitude')
+                .andExpect(jsonPath("$.*.lng").value(50.0))
                 .andExpect(jsonPath("$.*.altitude").value(1))
                 .andExpect(jsonPath("$.*.angle").value(2))
                 .andExpect(jsonPath("$.*.satellites").value(3))
@@ -92,7 +90,7 @@ public class PositionControllerTest {
 
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of());
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isEmpty());
          // Validate ;
@@ -102,7 +100,7 @@ public class PositionControllerTest {
     void shouldReturnAllPositions() throws Exception {
         Mockito.when(positionService.findAll(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions")).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -113,7 +111,7 @@ public class PositionControllerTest {
         String dateTo = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei,null, MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?to=" + dateTo)).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -124,7 +122,7 @@ public class PositionControllerTest {
         String dateFrom = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), null)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom)).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -136,7 +134,7 @@ public class PositionControllerTest {
         String dateTo = "05-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imei/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)).andDo(print()).andExpect(status().isOk())
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
         // Validate ;

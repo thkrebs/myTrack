@@ -1,6 +1,7 @@
 package com.tmv.core.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,17 +18,18 @@ import java.time.LocalDate;
 @Table(name = "overnightparking")
 public class OvernightParking {
 
-    @Id
-    Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "journey_id")
-    @JsonBackReference
-    Journey journey;
+    @EmbeddedId
+    private OvernightParkingId id = new OvernightParkingId();
 
     @ManyToOne
-    @JoinColumn(name = "parkspot_id")
-    ParkSpot parkSpot;
+    @MapsId("journeyId")
+    @JsonBackReference
+    private Journey journey;
 
-    LocalDate stayedAt;
+    @ManyToOne
+    @MapsId("parkSpotId")
+    @JsonBackReference
+    private ParkSpot parkSpot;
+
+    private LocalDate overnightDate;
 }

@@ -1,7 +1,7 @@
-package com.tmv.core.util;
+package com.tmv.core.exception;
 
 public class AccessViolationException extends RuntimeException {
-    AccessViolationException(String message) {
+    public AccessViolationException(String message) {
         super(message);
     }
 }

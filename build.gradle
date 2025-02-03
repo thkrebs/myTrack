@@ -64,6 +64,13 @@ dependencies {
 	implementation 'org.hibernate.orm:hibernate-spatial:6.4.1.Final'
 	implementation 'org.locationtech.jts:jts:1.20.0'
 	implementation("org.n52.jackson:jackson-datatype-jts:1.2.10")
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+	implementation 'org.hibernate.validator:hibernate-validator:8.0.0.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	implementation "org.mapstruct:mapstruct:1.5.5.Final"
 	compileOnly 'org.projectlombok:lombok:1.18.36'
 	annotationProcessor 'org.projectlombok:lombok:1.18.36'
 	testCompileOnly 'org.projectlombok:lombok:1.18.36'

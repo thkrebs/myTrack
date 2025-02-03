@@ -1,15 +1,16 @@
 package com.tmv.core.controller;
 
 
+import com.tmv.core.dto.ImeiDTO;
+import com.tmv.core.dto.MapStructMapper;
 import com.tmv.core.model.Imei;
-import com.tmv.core.model.Journey;
-import com.tmv.core.service.ImeiService;
 import com.tmv.core.service.ImeiServiceImpl;
-import com.tmv.core.service.JourneyServiceImpl;
-import com.tmv.core.service.ResourceNotFoundException;
+import com.tmv.core.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -22,45 +23,56 @@ import java.util.List;
 public class ImeiController extends BaseController {
 
     private final ImeiServiceImpl imeiService;
+    private final MapStructMapper mapper;
 
-    ImeiController(ImeiServiceImpl imeiService) {
+    ImeiController(MapStructMapper mapstructMapper, ImeiServiceImpl imeiService) {
+        this.mapper = mapstructMapper;
         this.imeiService = imeiService;
     }
 
     @PostMapping("/api/v1/imeis")
     @ResponseBody
-    Imei createImei(@RequestBody Imei newImei) {
-        return imeiService.createNewImei(newImei);
+    ResponseEntity<Imei> createImei(@Valid @RequestBody ImeiDTO newImeiDTO) {
+        Imei createdImei = imeiService.createNewImei(mapper.toImeiEntity(newImeiDTO));
+        return ResponseEntity.status(201).body(createdImei);
     }
 
     // Single item
-    @GetMapping("/api/v1/imei/{id}")
+    @GetMapping("/api/v1/imeis/{id}")
     @ResponseBody
-    Imei one(@PathVariable Long id) {
-        return imeiService.getImeiById(id)
+    ResponseEntity<ImeiDTO> one(@PathVariable Long id) {
+        Imei imei = imeiService.getImeiById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Imei not found with id: " + id));
+        return ResponseEntity.ok(mapper.toImeiDTO(imei));
     }
 
     @GetMapping(path = "/api/v1/imeis", params = { "page", "size" })
-    public List<Imei> allPaginated(@RequestParam("page") int page,
+    ResponseEntity<List<ImeiDTO>> allPaginated(@RequestParam("page") int page,
                                     @RequestParam("size") int size, UriComponentsBuilder uriBuilder,
                                     HttpServletResponse response) {
-        Page<Imei> resultPage = imeiService.allPaginated(page, size);
+        Page<ImeiDTO> resultPage = mapper.pagedImeiToPagedImeiDto(imeiService.allPaginated(page, size));
         if (page > resultPage.getTotalPages()) {
             throw new ResourceNotFoundException("No more Imeis");
         }
-        return resultPage.getContent();
+        // Add pagination metadata to headers
+        response.addHeader("X-Total-Pages", String.valueOf(resultPage.getTotalPages()));
+        response.addHeader("X-Total-Elements", String.valueOf(resultPage.getTotalElements()));
+
+        // Return ResponseEntity with the paginated content
+        return ResponseEntity.ok(resultPage.getContent());
     }
 
-    @PutMapping("/api/v1/imei/{id}")
+    @PutMapping("/api/v1/imeis/{id}")
     @ResponseBody
-    Imei updateJourney(@RequestBody Imei newImei, @PathVariable Long id) {
-        return imeiService.updateImei(id,newImei);
+    ResponseEntity<ImeiDTO> updateJourney(@RequestBody Imei newImei, @PathVariable Long id) {
+        Imei updatedImei = imeiService.updateImei(id,newImei);
+        return ResponseEntity.ok(mapper.toImeiDTO(updatedImei));
     }
 
-    @DeleteMapping("/api/v1/imei/{id}")
+    @DeleteMapping("/api/v1/imeis/{id}")
     @ResponseBody
-    void deleteJourney(@PathVariable Long id) {
+    ResponseEntity<Void> deleteJourney(@PathVariable Long id) {
         imeiService.deleteImei(id);
+        return ResponseEntity.noContent().build();
     }
 }

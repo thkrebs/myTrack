@@ -2,14 +2,14 @@ package com.tmv.ingest.teltonika.model;
 
 import lombok.Getter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class AvlData {
     @Getter
     private final int priority;
 
     @Getter
-    private final Date dateTime;
+    private final LocalDateTime dateTime;
 
     @Getter
     private final GpsElement gpsElement;
@@ -17,14 +17,14 @@ public class AvlData {
     @Getter
     private final IoElement ioElement;
 
-    private AvlData(int priority, Date dateTime, GpsElement gpsElement, IoElement ioElement) {
+    private AvlData(int priority, LocalDateTime dateTime, GpsElement gpsElement, IoElement ioElement) {
         this.priority = priority;
         this.dateTime = dateTime;
         this.gpsElement = gpsElement;
         this.ioElement = ioElement;
     }
 
-    public static AvlData create(int priority, Date dateTime, GpsElement gpsElement, IoElement ioElement) {
+    public static AvlData create(int priority, LocalDateTime dateTime, GpsElement gpsElement, IoElement ioElement) {
         return new AvlData(priority, dateTime, gpsElement, ioElement);
     }
 }

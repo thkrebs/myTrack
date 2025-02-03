@@ -1,6 +1,8 @@
 package com.tmv.core.service;
 
 import com.tmv.core.model.Journey;
+import com.tmv.core.model.OvernightParking;
+import com.tmv.core.model.ParkSpot;
 import org.locationtech.jts.geom.LineString;
 
 import java.time.LocalDateTime;
@@ -12,5 +14,9 @@ public interface JourneyService {
     Optional<Journey> getJourneyById(Long id);
     Journey updateJourney(Long id, Journey newTrack);
     void deleteJourney(Long id);
+    Journey startJourney(Long id);
+    Journey endJourney(Long id);
+    ParkSpot addOvernightParking(Long id,String parkingSpotName, String parkingSpotDescription);
+    public OvernightParking updateOvernightParking(Long journeyId, OvernightParking updatedParking);
     LineString trackForJourneyBetween(Long journeyId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
 }

@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Component
@@ -33,7 +33,7 @@ public class PositionDataEventListener {
             short angle = gpsEle.getAngle();
             byte satellites = gpsEle.getSatellites();
             short speed = gpsEle.getSpeed();
-            Date dateTime = element.getDateTime();
+            LocalDateTime dateTime = element.getDateTime();
             Position position = new Position(lng, lat, altitude, angle, satellites, speed, imei, dateTime);
             repository.save(position);
         }

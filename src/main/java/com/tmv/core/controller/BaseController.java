@@ -1,6 +1,6 @@
 package com.tmv.core.controller;
 
-import com.tmv.core.util.AccessViolationException;
+import com.tmv.core.exception.AccessViolationException;
 import lombok.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

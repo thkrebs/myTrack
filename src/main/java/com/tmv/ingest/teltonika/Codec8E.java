@@ -2,6 +2,9 @@ package com.tmv.ingest.teltonika;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Codec8E {
-    private static final Date AvlEpoch = new Date(0); // 1. Januar 1970, 00:00:00 UTC
+    private static final LocalDateTime AvlEpoch = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC); // 1. Januar 1970, 00:00:00 UTC
     private final DataInputStream reader;
 
     public Codec8E(DataInputStream reader) {
@@ -40,7 +43,7 @@ public class Codec8E {
      */
     private AvlData decodeAvlData() throws IOException {
         long timestamp = reader.readLong();
-        Date dateTime = new Date(AvlEpoch.getTime() + timestamp);
+        LocalDateTime dateTime = AvlEpoch.plusNanos(timestamp * 1_000_000);
         log.debug("decoded DateTime {}", dateTime);
 
         int priority = reader.readByte();

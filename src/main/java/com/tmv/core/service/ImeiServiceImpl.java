@@ -1,7 +1,8 @@
    package com.tmv.core.service;
 
+   import com.tmv.core.exception.ConstraintViolationException;
+   import com.tmv.core.exception.ResourceNotFoundException;
    import com.tmv.core.model.Imei;
-   import com.tmv.core.model.Journey;
    import com.tmv.core.persistence.ImeiRepository;
    import lombok.extern.slf4j.Slf4j;
    import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,6 @@
    import org.springframework.data.domain.Pageable;
    import org.springframework.stereotype.Service;
 
-   import java.util.List;
    import java.util.Optional;
 
    @Slf4j

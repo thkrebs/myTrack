@@ -15,8 +15,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.ComponentScan;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Date;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.argThat;
@@ -44,8 +42,7 @@ public class PositionDataEventListenerTest {
         final short speed = 5;
         final String imei = "xxx";
 
-        final Date dateTime = Date.from(LocalDateTime.now().toInstant(ZoneOffset.UTC));
-
+        final LocalDateTime dateTime = LocalDateTime.now();
         List<AvlData> data = List.of(
                 AvlData.create(0, dateTime, GpsElement.create(lng, lat, altitude, speed, angle, satellites), null),
                 AvlData.create(0, dateTime, GpsElement.create(lng, lat, altitude, speed, angle, satellites), null));

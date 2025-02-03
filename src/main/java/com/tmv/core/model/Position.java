@@ -9,7 +9,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -17,12 +17,12 @@ import java.util.Date;
 public class Position {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     protected Position() {}
 
-    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, Date dateTime) {
+    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, LocalDateTime dateTime) {
         final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), CoreConfiguration.SRID);
         this.altitude = altitude;
         this.angle = angle;
@@ -37,7 +37,7 @@ public class Position {
     private byte  satellites;
     private short speed;
     private String imei;
-    private Date dateTime;
+    private LocalDateTime dateTime;
 
     @Column(name = "point", columnDefinition = "geometry(Point, 4326)", nullable = false)
     private Point point;

@@ -1,11 +1,11 @@
 package com.tmv.core.controller;
 
 import com.tmv.core.config.CoreConfiguration;
+import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
 import com.tmv.core.service.JourneyService;
 import com.tmv.core.service.JourneyServiceImpl;
-import com.tmv.core.service.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -16,22 +16,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.format.datetime.DateFormatter;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.tmv.core.util.MultiFormatDateParser.formatDate;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,8 +62,8 @@ class JourneyControllerTest {
         testJourney = new Journey();
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
-        testJourney.setStartDate(getDateWithoutTimeUsingCalendar(0));
-        testJourney.setEndDate(getDateWithoutTimeUsingCalendar(1));
+        testJourney.setStartDate(getDate(0));
+        testJourney.setEndDate(getDate(1));
         testJourney.setTrackedByImeis(Set.of(firstImei, secondImei));
     }
 
@@ -69,19 +72,14 @@ class JourneyControllerTest {
         // Mocking service response
         given(journeyService.getJourneyById(1L)).willReturn(Optional.of(testJourney));
 
-        DateFormatter formatter = new DateFormatter();
-        formatter.setPattern("yyyy-MM-dd");
-        String formattedStartDate = formatter.print(testJourney.getStartDate(), Locale.getDefault());
-        String formattedEndDate = formatter.print(testJourney.getEndDate(), Locale.getDefault());
-
         // Testing the endpoint
-        mockMvc.perform(get("/api/v1/journey/1")
+        mockMvc.perform(get("/api/v1/journeys/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.description", is("Test Journey")))
-                .andExpect(jsonPath("$.startDate", is(formattedStartDate)))
-                .andExpect(jsonPath("$.endDate", is(formattedEndDate)))
+                .andExpect(jsonPath("$.startDate", is(getDate(testJourney.getStartDate()))))
+                .andExpect(jsonPath("$.endDate", is(getDate(testJourney.getEndDate()))))
                 .andExpect(jsonPath("$.trackedByImeis[*].imei", containsInAnyOrder(imeiStr1, imeiStr2)));
     }
 
@@ -91,7 +89,7 @@ class JourneyControllerTest {
         given(journeyService.getJourneyById(1L)).willReturn(Optional.empty());
 
         // Testing the endpoint
-        mockMvc.perform(get("/api/v1/journey/1")
+        mockMvc.perform(get("/api/v1/journeys/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
@@ -109,7 +107,7 @@ class JourneyControllerTest {
         mockMvc.perform(post("/api/v1/journeys")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"description\":\"New Journey\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(2)))
                 .andExpect(jsonPath("$.description", is("New Journey")));
     }
@@ -124,7 +122,7 @@ class JourneyControllerTest {
         given(journeyService.updateJourney(eq(1L), any(Journey.class))).willReturn(updatedJourney);
 
         // Testing the endpoint
-        mockMvc.perform(put("/api/v1/journey/1")
+        mockMvc.perform(put("/api/v1/journeys/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Updated Journey\"}"))
                 .andExpect(status().isOk())
@@ -139,8 +137,8 @@ class JourneyControllerTest {
         Mockito.doNothing().when(journeyService).deleteJourney(1L);
 
         // Testing the endpoint
-        mockMvc.perform(delete("/api/v1/journey/1"))
-                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/journeys/1"))
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -150,18 +148,84 @@ class JourneyControllerTest {
                 .when(journeyService).deleteJourney(1L);
 
         // Testing the endpoint
-        mockMvc.perform(delete("/api/v1/journey/1"))
+        mockMvc.perform(delete("/api/v1/journeys/1"))
                 .andExpect(status().isNotFound());
     }
 
-    public static Date getDateWithoutTimeUsingCalendar(int offset) {
-        Calendar calendar = Calendar.getInstance((TimeZone.getTimeZone("UTC")));
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0)   ;
-        calendar.add(Calendar.DATE,offset);
-        return calendar.getTime();
+    @Test
+    void shouldReturnBadRequestOnEndWhenJourneyIdIsMissing() throws Exception {
+        mockMvc.perform(put("/api/v1/journeys//end")) // Ungültige URL
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    void shouldReturnIsNotFoundOnEndWhenJourneyDoesNotExist() throws Exception {
+        Long journeyId = 1L;
+
+        Mockito.when(journeyService.endJourney(journeyId))
+                .thenThrow(new ResourceNotFoundException("Journey not found with id: 1"));
+        mockMvc.perform(put("/api/v1/journeys/1/end"))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    void shouldReturnIsNotFoundOnStartWhenJourneyDoesNotExist() throws Exception {
+        Long journeyId = 1L;
+
+        Mockito.when(journeyService.startJourney(journeyId))
+                .thenThrow(new ResourceNotFoundException("Journey not found with id: 1"));
+        mockMvc.perform(put("/api/v1/journeys/1/start"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldEndJourneySuccessfully() throws Exception {
+        Long journeyId = 1L;
+
+        Journey mockJourney = new Journey();
+        mockJourney.setId(journeyId);
+        mockJourney.setEndDate(LocalDate.now());
+
+        Mockito.when(journeyService.endJourney(journeyId)).thenReturn(mockJourney);
+
+        mockMvc.perform(put("/api/v1/journeys/{id}/end", journeyId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenJourneyDoesNotExistForStart() throws Exception {
+        Long invalidJourneyId = 999L;
+
+        Mockito.when(journeyService.startJourney(invalidJourneyId)).thenThrow(new ResourceNotFoundException("Journey not found with id: 999"));
+
+        mockMvc.perform(put("/api/v1/journeys/{id}/start", invalidJourneyId))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Journey not found with id: 999")); // Optional, wenn Error-Response ein JSON enthält
+    }
+
+    @Test
+    void shouldStartJourneySuccessfully() throws Exception {
+        Long journeyId = 1L;
+
+        Journey mockJourney = new Journey();
+        mockJourney.setId(journeyId);
+        mockJourney.setStartDate(LocalDate.now());
+
+        Mockito.when(journeyService.startJourney(journeyId)).thenReturn(mockJourney);
+
+        mockMvc.perform(put("/api/v1/journeys/{id}/start", journeyId))
+                .andExpect(status().isOk());
+    }
+
+    public static LocalDate getDate(int offset) {
+        return LocalDate.now(ZoneId.of("UTC")).plusDays(offset);
+    }
+
+    public static String getDate(LocalDate date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // Definiertes Format
+        return date.format(formatter);
     }
 
 }

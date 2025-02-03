@@ -1,5 +1,6 @@
 package com.tmv.core.service;
 
+import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Position;
 import com.tmv.core.persistence.PositionRepository;
 import org.springframework.stereotype.Service;

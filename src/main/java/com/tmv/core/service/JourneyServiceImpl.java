@@ -1,17 +1,20 @@
 package com.tmv.core.service;
 
-import com.tmv.core.model.Imei;
-import com.tmv.core.model.Journey;
-import com.tmv.core.model.Position;
-import com.tmv.core.persistence.JourneyRepository;
-import com.tmv.core.persistence.PositionRepository;
+import com.tmv.core.dto.OvernightParkingDTO;
+import com.tmv.core.exception.ConstraintViolationException;
+import com.tmv.core.exception.ResourceNotFoundException;
+import com.tmv.core.model.*;
+import com.tmv.core.persistence.*;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,12 +26,18 @@ public class JourneyServiceImpl implements JourneyService {
     private final PositionRepository positionRepository;
     private final GeometryFactory geomFactory;
     private final JourneyRepository journeyRepository;
+    private final ParkSpotRepository parkSpotRepository;
+    private final OvernightParkingRepository overnightParkingRepository;
+    private final ImeiRepository imeiRepository;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
         this.journeyRepository = journeyRepository;
+        this.parkSpotRepository = parkSpotRepository;
+        this.overnightParkingRepository = overnightParkingRepository;
+        this.imeiRepository = imeiRepository;
     }
 
     public LineString trackForJourney(Long journeyId) {
@@ -47,22 +56,21 @@ public class JourneyServiceImpl implements JourneyService {
 
         List<String> imeiStrings = extractImeiStrings(journey);
         if ((fromDateTime != null) && (toDateTime != null)) {
-            List<Position> positions =  positionRepository.findByImeiInAndDateTimeBetweenOrderByDateTimeAsc(imeiStrings,fromDateTime, toDateTime);
+            List<Position> positions = positionRepository.findByImeiInAndDateTimeBetweenOrderByDateTimeAsc(imeiStrings, fromDateTime, toDateTime);
             return createLineStringFromPositions(positions);
-        }
-        else if (toDateTime == null) {
-            List<Position> positions = positionRepository.findByImeiInAndDateTimeGreaterThanEqualOrderByDateTimeAsc(imeiStrings,fromDateTime);
+        } else if (toDateTime == null) {
+            List<Position> positions = positionRepository.findByImeiInAndDateTimeGreaterThanEqualOrderByDateTimeAsc(imeiStrings, fromDateTime);
             return createLineStringFromPositions(positions);
-        }
-        else  {
+        } else {
             List<Position> positions = positionRepository.findByImeiInAndDateTimeLessThanEqualOrderByDateTimeAsc(imeiStrings, toDateTime);
             return createLineStringFromPositions(positions);
         }
     }
 
-    public Journey createNewJourney(Journey newJourney) {
-        log.info("Creating a new journey: {}", newJourney);
-        return journeyRepository.save(newJourney);
+public Journey createNewJourney(Journey newJourney) {
+    log.info("Creating a new journey: {}", newJourney);
+    processTrackImeis(newJourney);
+    return journeyRepository.save(newJourney);
     }
 
     public Optional<Journey> getJourneyById(Long id) {
@@ -70,20 +78,121 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
-    public Journey updateJourney(Long id, Journey newTrack) {
+    public Journey updateJourney(Long id, Journey newJourney) {
+        processTrackImeis(newJourney);
         return journeyRepository.findById(id)
                 .map(existingJourney -> {
-                    existingJourney.setDescription(newTrack.getDescription());
-                    existingJourney.setStartDate(newTrack.getStartDate());
-                    existingJourney.setEndDate(newTrack.getEndDate());
-                    existingJourney.setTrackedByImeis(newTrack.getTrackedByImeis());
+                    existingJourney.setDescription(newJourney.getDescription());
+                    existingJourney.setStartDate(newJourney.getStartDate());
+                    existingJourney.setEndDate(newJourney.getEndDate());
+                    existingJourney.setTrackedByImeis(newJourney.getTrackedByImeis());
                     return journeyRepository.save(existingJourney);
                 })
                 .orElseGet(() -> {
-                    newTrack.setId(id);
-                    return journeyRepository.save(newTrack);
+                    newJourney.setId(id);
+                    return journeyRepository.save(newJourney);
                 });
     }
+
+    public Journey startJourney(Long id) {
+        Journey journey = journeyRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
+        if (!isAnyImeiActive(journey)) {
+            throw new ConstraintViolationException("Cannot start journey. No tracker is active");
+        }
+        journey.setStartDate(LocalDate.now());
+        return journeyRepository.save(journey);
+    }
+
+    public Journey endJourney(Long id) {
+        Journey journey = journeyRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
+        // do not need an active tracker to end
+        journey.setEndDate(LocalDate.now());
+        return journeyRepository.save(journey);
+    }
+
+    @Transactional
+    public ParkSpot addOvernightParking(Long id, String parkingSpotName, String parkingSpotDescription) {
+        Journey journey = journeyRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
+        Position lastPosition = getLastPositionForActiveImei(journey);
+        // check whether there is already a position in proximity
+        List<ParkSpot> spotsNearBy = parkSpotRepository.findWithinDistance(
+                lastPosition.getPoint().getX(),
+                lastPosition.getPoint().getY(),
+                50);
+        log.info("Found {} park spots. Will take the first one", spotsNearBy.size());
+        Position parkSpotPosition;
+        if (spotsNearBy.isEmpty()) {
+            return createNewParkSpotForJourney(journey,lastPosition,parkingSpotName,parkingSpotDescription);
+        }
+        else {
+            return addOvernightParkingForJourney(journey, spotsNearBy.getFirst());
+        }
+
+    }
+
+    public OvernightParking updateOvernightParking(Long journeyId, OvernightParking updatedParking) {
+        OvernightParking overnightParking = overnightParkingRepository.findById(updatedParking.getId());
+        if (overnightParking != null) {
+            return overnightParkingRepository.save(overnightParking);
+        }
+        else {
+            throw new ResourceNotFoundException("Overnight Parking with journey id: "
+                    + updatedParking.getId().getJourneyId() + " parkspot id: "
+                    + updatedParking.getId().getParkSpotId());
+        }
+    }
+
+    protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName, String parkingSpotDescription) {
+        OvernightParking overnightParking = new OvernightParking();
+        overnightParking.setOvernightDate(position.getDateTime().toLocalDate());
+
+        ParkSpot parkSpot = new ParkSpot();
+        parkSpot.setPoint(position.getPoint());
+        parkSpot.setName(parkingSpotName);
+        parkSpot.setDescription(parkingSpotDescription);
+        parkSpotRepository.save(parkSpot);
+
+        overnightParking.setJourney(journey);
+        overnightParking.setParkSpot(parkSpot);
+
+        parkSpot.getOvernightParkings().add(overnightParking);
+        journey.getOvernightParkings().add(overnightParking);
+        //overnightParkingRepository.save(overnightParking);
+        journeyRepository.save(journey);
+
+        return parkSpot;
+    }
+
+    protected ParkSpot addOvernightParkingForJourney(Journey journey, ParkSpot parkSpot) {
+        OvernightParking overnightParking = new OvernightParking();
+        overnightParking.setOvernightDate(LocalDate.now());
+        parkSpotRepository.save(parkSpot);
+
+        overnightParking.setJourney(journey);
+        overnightParking.setParkSpot(parkSpot);
+
+        parkSpot.getOvernightParkings().add(overnightParking);
+        journey.getOvernightParkings().add(overnightParking);
+        journeyRepository.save(journey);
+
+        return parkSpot;
+    }
+
+    private Position getLastPositionForActiveImei(Journey journey) {
+        Imei activeImei = getActiveImei(journey);
+        if (activeImei == null) {
+            throw new ConstraintViolationException("Could not find any active tracker for journey with id:" + journey.getId());
+        }
+        Iterator<Position> iterator = positionRepository.findTopByImeiOrderByDateTimeDesc(activeImei.getImei()).iterator();
+        if (!iterator.hasNext()) {
+            throw new ResourceNotFoundException("No positions found for active tracker with IMEI: " + activeImei.getImei());
+        }
+        return iterator.next();
+    }
+
 
     public void deleteJourney(Long id) {
         if (!journeyRepository.existsById(id)) {
@@ -108,5 +217,27 @@ public class JourneyServiceImpl implements JourneyService {
 
     private Coordinate mapToCoordinate(Position position) {
         return new Coordinate(position.getPoint().getX(), position.getPoint().getY());
+    }
+
+    private boolean isAnyImeiActive(Journey journey) {
+        return journey.getTrackedByImeis()
+                .stream()
+                .anyMatch(Imei::isActive);
+    }
+
+    private Imei getActiveImei(Journey journey) {
+        return journey.getTrackedByImeis()
+                .stream()
+                .filter(Imei::isActive)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void processTrackImeis(Journey newJourney) {
+        List<Imei> imeis = newJourney.getTrackedByImeis().stream().toList();
+        imeis.forEach(providedImei -> {
+            Optional<Imei> imei = Optional.ofNullable(imeiRepository.findByImei(providedImei.getImei()));
+            imei.ifPresent(persistedImei -> newJourney.setId(persistedImei.getId()));
+        });
     }
 }
