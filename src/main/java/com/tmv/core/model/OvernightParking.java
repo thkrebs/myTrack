@@ -31,5 +31,6 @@ public class OvernightParking {
     @JsonBackReference
     private ParkSpot parkSpot;
 
+    @Column(insertable = false, updatable = false)
     private LocalDate overnightDate;
 }

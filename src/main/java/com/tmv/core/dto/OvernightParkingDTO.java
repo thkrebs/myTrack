@@ -12,6 +12,5 @@ import java.time.LocalDate;
 public class OvernightParkingDTO {
     Long parkSpotId;
     Long journeyId;
-
-    private LocalDate overnightDate;
+    LocalDate overnightDate;
 }

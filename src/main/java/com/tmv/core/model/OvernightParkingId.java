@@ -5,6 +5,7 @@ import jakarta.persistence.Embeddable;
 import lombok.*;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 
 @Getter
@@ -19,4 +20,6 @@ public class OvernightParkingId implements Serializable {
 
     //@Column(name = "parkspot_id")
     private Long parkSpotId;
+
+    private LocalDate overnightDate;
 }

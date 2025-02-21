@@ -55,7 +55,7 @@
                        return imeiRepository.save(existingImei);
                    })
                    .orElseGet(() -> {
-                       newImei.setId(id);
+                       //newImei.setId(id);
                        return imeiRepository.save(newImei);
                    });
        }

@@ -32,4 +32,3 @@ INSERT INTO imei (id, imei, active) VALUES (2, '352016706223907', TRUE);
 CREATE INDEX position_date_idx ON position (datetime,imei)  WITH (deduplicate_items = off);
 CREATE INDEX parkspot_geom_idx ON parkspot USING GIST (point);
 CREATE INDEX position_geom_idx ON position USING GIST (point);
-

@@ -16,7 +16,6 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode
 public class CreateJourneyDTO {
-    private Long id;
 
     @Size(min = 1, max = 255)
     @NotNull

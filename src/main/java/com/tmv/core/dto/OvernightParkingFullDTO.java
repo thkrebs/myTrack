@@ -1,7 +1,7 @@
 package com.tmv.core.dto;
 
+
 import lombok.*;
-import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDate;
 
@@ -10,10 +10,11 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
-public class ParkSpotDTO {
-    private Long id;
+public class OvernightParkingFullDTO {
+    private Long parkspotId;
     private String name;
     private String description;
-    private Float lat;
-    private Float lng;
+    private float lat;
+    private float lng;
+    private LocalDate overnightDate;
 }

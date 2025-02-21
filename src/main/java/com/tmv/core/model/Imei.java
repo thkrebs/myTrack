@@ -30,7 +30,6 @@
        private String phoneNumber;
 
        @ManyToMany(mappedBy = "trackedByImeis", fetch = FetchType.LAZY)
-       @JsonBackReference
        private Set<Journey> journeys;
 
        public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber ) {

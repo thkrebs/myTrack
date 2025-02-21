@@ -6,8 +6,9 @@ import com.tmv.core.model.Position;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface OvernightParkingRepository extends JpaRepository<OvernightParking, Long> {
-    OvernightParking findById(OvernightParkingId id);
+public interface OvernightParkingRepository extends JpaRepository<OvernightParking, OvernightParkingId> {
 
 }

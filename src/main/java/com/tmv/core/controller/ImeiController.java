@@ -64,8 +64,8 @@ public class ImeiController extends BaseController {
 
     @PutMapping("/api/v1/imeis/{id}")
     @ResponseBody
-    ResponseEntity<ImeiDTO> updateJourney(@RequestBody Imei newImei, @PathVariable Long id) {
-        Imei updatedImei = imeiService.updateImei(id,newImei);
+    ResponseEntity<ImeiDTO> updateJourney(@RequestBody ImeiDTO newImei, @PathVariable Long id) {
+        Imei updatedImei = imeiService.updateImei(id,mapper.toImeiEntity(newImei));
         return ResponseEntity.ok(mapper.toImeiDTO(updatedImei));
     }
 

@@ -30,6 +30,6 @@ public class JourneyDTO {
     private LocalDate endDate;
 
     private List<ImeiSlimDTO> trackedByImeis = new ArrayList<>();
-    private List<ParkSpotDTO> parkSpots= new ArrayList<>();
+    private List<OvernightParkingFullDTO> parkSpots = new ArrayList<>();
 
 }

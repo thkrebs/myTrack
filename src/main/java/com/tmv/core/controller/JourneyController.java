@@ -36,7 +36,7 @@ public class JourneyController extends BaseController {
         this.mapper = mapstructMapper;
     }
 
-    @GetMapping(value="/api/v1/journeys/{journey}/track/", produces = "application/json")
+    @GetMapping(value="/api/v1/journeys/{journey}/track", produces = "application/json")
     LineString currentTrack(@PathVariable Long journey, @RequestParam(required = false) Map<String, String> params) {
         return getTrack(journey, params);
     }

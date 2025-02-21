@@ -2,9 +2,12 @@ package com.tmv.core.service;
 
 import com.tmv.core.dto.OvernightParkingDTO;
 import com.tmv.core.exception.ConstraintViolationException;
+import com.tmv.core.exception.ResourceAlreadyExistsException;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.*;
 import com.tmv.core.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -22,6 +25,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class JourneyServiceImpl implements JourneyService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final PositionRepository positionRepository;
     private final GeometryFactory geomFactory;
@@ -67,10 +73,10 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
-public Journey createNewJourney(Journey newJourney) {
-    log.info("Creating a new journey: {}", newJourney);
-    processTrackImeis(newJourney);
-    return journeyRepository.save(newJourney);
+    public Journey createNewJourney(Journey newJourney) {
+        log.info("Creating a new journey: {}", newJourney);
+        processTrackImeis(newJourney);
+        return journeyRepository.save(newJourney);
     }
 
     public Optional<Journey> getJourneyById(Long id) {
@@ -123,26 +129,25 @@ public Journey createNewJourney(Journey newJourney) {
                 lastPosition.getPoint().getY(),
                 50);
         log.info("Found {} park spots. Will take the first one", spotsNearBy.size());
-        Position parkSpotPosition;
         if (spotsNearBy.isEmpty()) {
-            return createNewParkSpotForJourney(journey,lastPosition,parkingSpotName,parkingSpotDescription);
-        }
-        else {
+            return createNewParkSpotForJourney(journey, lastPosition, parkingSpotName, parkingSpotDescription);
+        } else {
             return addOvernightParkingForJourney(journey, spotsNearBy.getFirst());
         }
 
     }
 
     public OvernightParking updateOvernightParking(Long journeyId, OvernightParking updatedParking) {
-        OvernightParking overnightParking = overnightParkingRepository.findById(updatedParking.getId());
-        if (overnightParking != null) {
-            return overnightParkingRepository.save(overnightParking);
-        }
-        else {
-            throw new ResourceNotFoundException("Overnight Parking with journey id: "
-                    + updatedParking.getId().getJourneyId() + " parkspot id: "
-                    + updatedParking.getId().getParkSpotId());
-        }
+        return overnightParkingRepository.findById(updatedParking.getId())
+                .map(existingOvernightParking -> {
+                    existingOvernightParking.setOvernightDate(updatedParking.getOvernightDate());
+                    existingOvernightParking.setParkSpot(updatedParking.getParkSpot());
+                    return overnightParkingRepository.save(existingOvernightParking);
+                }).orElseThrow(() ->
+                        new ResourceNotFoundException("Overnight Parking with journey id: "
+                                + updatedParking.getId().getJourneyId() + " parkspot id: "
+                                + updatedParking.getId().getParkSpotId()
+                        ));
     }
 
     protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName, String parkingSpotDescription) {
@@ -167,17 +172,28 @@ public Journey createNewJourney(Journey newJourney) {
     }
 
     protected ParkSpot addOvernightParkingForJourney(Journey journey, ParkSpot parkSpot) {
-        OvernightParking overnightParking = new OvernightParking();
-        overnightParking.setOvernightDate(LocalDate.now());
-        parkSpotRepository.save(parkSpot);
+        OvernightParkingId overnightParkingId = new OvernightParkingId();
+        overnightParkingId.setOvernightDate(LocalDate.now());
+        overnightParkingId.setJourneyId(journey.getId());
+        overnightParkingId.setParkSpotId(parkSpot.getId());
+        Optional<OvernightParking> optional = overnightParkingRepository.findById(overnightParkingId);
+        if (optional.isPresent()) {
+            throw new ResourceAlreadyExistsException("Overnight Parking with ID " + overnightParkingId + " already exists.");
+        }
 
+        OvernightParking overnightParking = new OvernightParking();
+        overnightParking.setId(overnightParkingId);
+
+        //overnightParking.setOvernightDate(LocalDate.now());
         overnightParking.setJourney(journey);
         overnightParking.setParkSpot(parkSpot);
 
         parkSpot.getOvernightParkings().add(overnightParking);
         journey.getOvernightParkings().add(overnightParking);
-        journeyRepository.save(journey);
 
+        overnightParkingRepository.save(overnightParking);
+        journeyRepository.save(journey);
+        parkSpotRepository.save(parkSpot);
         return parkSpot;
     }
 
