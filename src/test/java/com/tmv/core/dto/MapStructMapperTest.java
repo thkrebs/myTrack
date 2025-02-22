@@ -53,7 +53,6 @@ class MapStructMapperTest {
 
     @Test
     void shouldMapOvernightParkingEntityToDTO() {
-        OvernightParkingId id = new OvernightParkingId(1L, 5L, LocalDate.of(2023, 10, 1));
         ParkSpot parkSpot = new ParkSpot();
         parkSpot.setId(5L);
         Journey journey = new Journey();
@@ -148,8 +147,6 @@ class MapStructMapperTest {
     // TEST 8: Fehlerhafte Daten verarbeiten Entität → DTO
     @Test
     void shouldHandleInvalidDataEntityToDTO() {
-        // Arrange: Erstelle eine Entität mit falschen Werten
-        LocalDate date = LocalDate.now();
 
         OvernightParking entity = new OvernightParking();
         entity.setId(new OvernightParkingId());
@@ -273,9 +270,9 @@ class MapStructMapperTest {
 
         assertNotNull(imeiDTOPage);
         assertEquals(2, imeiDTOPage.getTotalElements());
-        assertEquals("123", imeiDTOPage.getContent().get(0).getImei());
-        assertTrue(imeiDTOPage.getContent().get(0).isActive());
-        assertEquals(from, imeiDTOPage.getContent().get(0).getValidFrom());
+        assertEquals("123", imeiDTOPage.getContent().getFirst().getImei());
+        assertTrue(imeiDTOPage.getContent().getFirst().isActive());
+        assertEquals(from, imeiDTOPage.getContent().getFirst().getValidFrom());
         assertEquals(to, imeiDTOPage.getContent().get(0).getValidTo());
         assertEquals("01512", imeiDTOPage.getContent().get(0).getPhoneNumber());
         assertEquals("456", imeiDTOPage.getContent().get(1).getImei());
