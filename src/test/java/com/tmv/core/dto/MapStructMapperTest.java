@@ -53,14 +53,14 @@ class MapStructMapperTest {
 
     @Test
     void shouldMapOvernightParkingEntityToDTO() {
-        OvernightParkingId id = new OvernightParkingId(1L, 5L);
+        OvernightParkingId id = new OvernightParkingId(1L, 5L, LocalDate.of(2023, 10, 1));
         ParkSpot parkSpot = new ParkSpot();
         parkSpot.setId(5L);
         Journey journey = new Journey();
         journey.setId(1L);
 
         OvernightParking entity = new OvernightParking();
-        entity.setId(new OvernightParkingId(1L, 5L));
+        entity.setId(new OvernightParkingId(1L, 5L, LocalDate.of(2023, 10, 1)));
         entity.setOvernightDate(LocalDate.of(2023, 10, 1));
 
         // Act: Map Entity zu DTO
@@ -152,7 +152,7 @@ class MapStructMapperTest {
         LocalDate date = LocalDate.now();
 
         OvernightParking entity = new OvernightParking();
-        entity.setId(new OvernightParkingId(null, null));
+        entity.setId(new OvernightParkingId());
         entity.setOvernightDate(null);
 
         // Act: Map Entity zu DTO
