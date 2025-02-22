@@ -9,6 +9,7 @@ import com.tmv.core.service.JourneyServiceImpl;
 import com.tmv.core.util.MultiFormatDateParser;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.LineString;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,7 @@ public class JourneyController extends BaseController {
     private final JourneyServiceImpl journeyService;
     private final MapStructMapper mapper;
 
-    JourneyController(MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
+    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
         this.journeyService = journeyService;
         this.mapper = mapstructMapper;
     }

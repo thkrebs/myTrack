@@ -7,6 +7,7 @@ import com.tmv.core.service.PositionServiceImpl;
 import com.tmv.core.util.MultiFormatDateParser;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ class PositionController extends BaseController {
     private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
-    PositionController(PositionServiceImpl positionService, MapStructMapper mapper) {
+    PositionController(PositionServiceImpl positionService, @Qualifier("mapStructMapper") MapStructMapper mapper) {
         this.positionService = positionService;
         this.mapper = mapper;
     }

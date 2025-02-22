@@ -2,6 +2,7 @@ package com.tmv.core.controller;
 
 
 import com.tmv.core.dto.ImeiDTO;
+import org.springframework.beans.factory.annotation.Qualifier;
 import com.tmv.core.dto.MapStructMapper;
 import com.tmv.core.model.Imei;
 import com.tmv.core.service.ImeiServiceImpl;
@@ -25,7 +26,7 @@ public class ImeiController extends BaseController {
     private final ImeiServiceImpl imeiService;
     private final MapStructMapper mapper;
 
-    ImeiController(MapStructMapper mapstructMapper, ImeiServiceImpl imeiService) {
+    ImeiController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, ImeiServiceImpl imeiService) {
         this.mapper = mapstructMapper;
         this.imeiService = imeiService;
     }
