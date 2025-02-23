@@ -17,6 +17,6 @@ public interface JourneyService {
     Journey startJourney(Long id);
     Journey endJourney(Long id);
     ParkSpot addOvernightParking(Long id,String parkingSpotName, String parkingSpotDescription);
-    public OvernightParking updateOvernightParking(Long journeyId, OvernightParking updatedParking);
+    OvernightParking updateOvernightParking(Long journeyId, OvernightParking updatedParking);
     LineString trackForJourneyBetween(Long journeyId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
 }
