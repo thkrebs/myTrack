@@ -92,6 +92,7 @@ public class JourneyServiceImpl implements JourneyService {
                     existingJourney.setStartDate(newJourney.getStartDate());
                     existingJourney.setEndDate(newJourney.getEndDate());
                     existingJourney.setTrackedByImeis(newJourney.getTrackedByImeis());
+                    existingJourney.setName(newJourney.getName());
                     return journeyRepository.save(existingJourney);
                 })
                 .orElseGet(() -> {

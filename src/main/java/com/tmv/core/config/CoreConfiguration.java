@@ -1,5 +1,7 @@
 package com.tmv.core.config;
 
+import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.dto.MapStructMapperImpl;
 import com.tmv.core.util.ImeiUrlGuardian;
 import com.tmv.core.util.LoggerInterceptor;
 import org.n52.jackson.datatype.jts.JtsModule;
@@ -27,4 +29,8 @@ public class CoreConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(imeiUrlGuardian).addPathPatterns("/api/v1/**");
     }
 
+    @Bean
+    public MapStructMapper mapStructMapper() {
+        return new MapStructMapperImpl();
+    }
 }

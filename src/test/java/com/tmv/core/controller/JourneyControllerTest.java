@@ -1,6 +1,8 @@
 package com.tmv.core.controller;
 
 import com.tmv.core.config.CoreConfiguration;
+import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.dto.MapStructMapperImpl;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
@@ -13,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ComponentScan(basePackages = "com.tmv")
-@PropertySource("classpath:application.properties")
+@PropertySource("classpath:application-test.properties")
 @Import(CoreConfiguration.class)
 class JourneyControllerTest {
 
@@ -56,6 +56,7 @@ class JourneyControllerTest {
 
     private final Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123");
     private final Imei secondImei =  new Imei(imeiStr2, true, Date.from(Instant.now()), Date.from(Instant.now()), "456");
+
 
     @BeforeEach
     void setUp() {

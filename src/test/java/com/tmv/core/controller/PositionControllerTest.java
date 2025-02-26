@@ -2,6 +2,8 @@ package com.tmv.core.controller;
 
 
 import com.tmv.core.config.CoreConfiguration;
+import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.dto.MapStructMapperImpl;
 import com.tmv.core.model.Position;
 import com.tmv.core.service.ImeiService;
 import com.tmv.core.service.ImeiServiceImpl;
@@ -14,9 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
