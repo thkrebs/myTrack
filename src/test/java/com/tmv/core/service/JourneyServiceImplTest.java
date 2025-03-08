@@ -3,8 +3,12 @@ package com.tmv.core.service;
 import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceNotFoundException;
-import com.tmv.core.model.*;
+import com.tmv.core.model.Imei;
+import com.tmv.core.model.Journey;
+import com.tmv.core.model.ParkSpot;
+import com.tmv.core.model.Position;
 import com.tmv.core.persistence.*;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +56,12 @@ class JourneyServiceImplTest {
     @Mock
     ImeiRepository imeiRepository;
 
+    @Mock
+    WordPressPostServiceImpl wordPressPostService;
+
+    @Mock
+    private EntityManager entityManagerMock;
+
     @InjectMocks
     private JourneyServiceImpl journeyService;
 
@@ -62,7 +73,9 @@ class JourneyServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository);
+        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService);
+        // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
+        ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
     }
 
     @Test
@@ -154,7 +167,6 @@ class JourneyServiceImplTest {
         Journey existingJourney = new Journey();
         existingJourney.setId(journeyId);
         existingJourney.setDescription("Old description");
-
 
         Journey newJourneyData = new Journey();
         newJourneyData.setDescription("New description");
@@ -296,14 +308,17 @@ class JourneyServiceImplTest {
         Mockito.when(parkSpotRepository.save(any())).thenReturn(expectedParkSpot);
 
         // Act
-        ParkSpot result = journeyService.addOvernightParking(journeyId, parkingSpotName, parkingSpotDescription);
+        ParkSpot result = null;
+        result = journeyService.addOvernightParking(journeyId, parkingSpotName, parkingSpotDescription, true, LocalDate.now());
 
         // Assert
         assertNotNull(result);
         assertEquals(parkingSpotName, result.getName());
         assertEquals(parkingSpotDescription, result.getDescription());
         verify(journeyRepository, times(1)).findById(journeyId);
-        verify(parkSpotRepository, times(1)).save(any());
+        verify(wordPressPostService,times(1))
+                    .createPost(parkingSpotName,parkingSpotDescription,position.getPoint().getY(), position.getPoint().getX() );
+        ParkSpot save = verify(parkSpotRepository, times(1)).save(any());
     }
 
 
@@ -330,7 +345,9 @@ class JourneyServiceImplTest {
         Mockito.when(parkSpotRepository.findWithinDistance(1.0f, 2.0f, 50)).thenReturn(List.of(expectedParkSpot));
 
         // Act
-        ParkSpot result = journeyService.addOvernightParking(journeyId, parkingSpotName, parkingSpotDescription);
+        ParkSpot result = null;
+        result = journeyService.addOvernightParking(journeyId, parkingSpotName, parkingSpotDescription, false, LocalDate.now() );
+
 
         // Assert
         assertNotNull(result);
@@ -354,7 +371,9 @@ class JourneyServiceImplTest {
 
         // Act & Assert
         ConstraintViolationException exception = assertThrows(ConstraintViolationException.class,
-                () -> journeyService.addOvernightParking(journeyId, "Spot B", "Description B"));
+                () -> journeyService.addOvernightParking(
+                        journeyId, "Spot B", "Description B",false, LocalDate.now())
+                );
 
         verify(journeyRepository, times(1)).findById(journeyId);
         verifyNoInteractions(positionRepository);
@@ -374,7 +393,8 @@ class JourneyServiceImplTest {
 
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
-                () -> journeyService.addOvernightParking(journeyId, "Spot C", "Description C"));
+                () -> journeyService
+                        .addOvernightParking(journeyId, "Spot C", "Description C",false, LocalDate.now() ));
 
         assertEquals("No positions found for active tracker with IMEI: " + imei.getImei(), exception.getMessage());
         verify(journeyRepository, times(1)).findById(journeyId);

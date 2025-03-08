@@ -66,7 +66,7 @@ public class LoggerInterceptor implements HandlerInterceptor {
             Object handler,
             ModelAndView modelAndView) throws Exception {
 
-        log.debug("[postHandle][" + request + "]");
+        log.debug("[postHandle][" + request + response.getStatus());
     }
 
     @Override

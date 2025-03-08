@@ -1,6 +1,5 @@
 package com.tmv.core.service;
 
-import com.tmv.core.dto.OvernightParkingDTO;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceAlreadyExistsException;
 import com.tmv.core.exception.ResourceNotFoundException;
@@ -15,6 +14,7 @@ import org.locationtech.jts.geom.LineString;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Iterator;
@@ -29,14 +29,16 @@ public class JourneyServiceImpl implements JourneyService {
     @PersistenceContext
     private EntityManager entityManager;
 
+
     private final PositionRepository positionRepository;
     private final GeometryFactory geomFactory;
     private final JourneyRepository journeyRepository;
     private final ParkSpotRepository parkSpotRepository;
     private final OvernightParkingRepository overnightParkingRepository;
     private final ImeiRepository imeiRepository;
+    private final WordPressPostService wordPressPostService;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
@@ -44,6 +46,7 @@ public class JourneyServiceImpl implements JourneyService {
         this.parkSpotRepository = parkSpotRepository;
         this.overnightParkingRepository = overnightParkingRepository;
         this.imeiRepository = imeiRepository;
+        this.wordPressPostService = wordPressPostService;
     }
 
     public LineString trackForJourney(Long journeyId) {
@@ -120,7 +123,13 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Transactional
-    public ParkSpot addOvernightParking(Long id, String parkingSpotName, String parkingSpotDescription) {
+    public ParkSpot addOvernightParking(Long id, String parkingSpotName, String parkingSpotDescription,
+                                        boolean createWPPost, LocalDate date) {
+        Integer wpPostId = -1;
+        if (date == null) {
+            date = LocalDate.now();
+        }
+
         Journey journey = journeyRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
         Position lastPosition = getLastPositionForActiveImei(journey);
@@ -131,9 +140,23 @@ public class JourneyServiceImpl implements JourneyService {
                 50);
         log.info("Found {} park spots. Will take the first one", spotsNearBy.size());
         if (spotsNearBy.isEmpty()) {
-            return createNewParkSpotForJourney(journey, lastPosition, parkingSpotName, parkingSpotDescription);
+            if (createWPPost) {
+                try {
+                    wpPostId = wordPressPostService.createPost(parkingSpotName,
+                            parkingSpotDescription,
+                            lastPosition.getPoint().getY(),
+                            lastPosition.getPoint().getX());
+                    log.info("Created a new park spot for overnight parking in WordPress: {}, id: {}", parkingSpotName, wpPostId);
+                } catch (IOException e) {
+                    log.error("Could not create post for: [" + parkingSpotName + "]", e);
+                }
+             }
+            else {
+                log.info("Parameter createWPPost is false. Will not create a new park spot in WordPress. Will create a new park spot in the database only.");
+            }
+            return createNewParkSpotForJourney(journey, lastPosition, parkingSpotName, parkingSpotDescription, wpPostId, date);
         } else {
-            return addOvernightParkingForJourney(journey, spotsNearBy.getFirst());
+            return addOvernightParkingForJourney(journey, spotsNearBy.getFirst(), date);
         }
 
     }
@@ -151,30 +174,40 @@ public class JourneyServiceImpl implements JourneyService {
                         ));
     }
 
-    protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName, String parkingSpotDescription) {
-        OvernightParking overnightParking = new OvernightParking();
-        overnightParking.setOvernightDate(position.getDateTime().toLocalDate());
-
+    protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName,
+                                                   String parkingSpotDescription, Integer wpPostId, LocalDate date) {
         ParkSpot parkSpot = new ParkSpot();
         parkSpot.setPoint(position.getPoint());
         parkSpot.setName(parkingSpotName);
         parkSpot.setDescription(parkingSpotDescription);
-        parkSpotRepository.save(parkSpot);
+        parkSpot.setWpPostId(wpPostId);
+        parkSpot = parkSpotRepository.save(parkSpot);
+
+
+        OvernightParkingId parkingId = new OvernightParkingId();
+        parkingId.setOvernightDate(date);
+        parkingId.setJourneyId(journey.getId());
+        parkingId.setParkSpotId(parkSpot.getId());
+
+        OvernightParking overnightParking = new OvernightParking();
+        overnightParking.setId(parkingId);
+        overnightParking.setOvernightDate(parkingId.getOvernightDate());
 
         overnightParking.setJourney(journey);
         overnightParking.setParkSpot(parkSpot);
+        overnightParking = entityManager.merge(overnightParking);
 
         parkSpot.getOvernightParkings().add(overnightParking);
         journey.getOvernightParkings().add(overnightParking);
-        //overnightParkingRepository.save(overnightParking);
-        journeyRepository.save(journey);
 
+        entityManager.merge(journey);
         return parkSpot;
+
     }
 
-    protected ParkSpot addOvernightParkingForJourney(Journey journey, ParkSpot parkSpot) {
+    protected ParkSpot addOvernightParkingForJourney(Journey journey, ParkSpot parkSpot, LocalDate date) {
         OvernightParkingId overnightParkingId = new OvernightParkingId();
-        overnightParkingId.setOvernightDate(LocalDate.now());
+        overnightParkingId.setOvernightDate(date);
         overnightParkingId.setJourneyId(journey.getId());
         overnightParkingId.setParkSpotId(parkSpot.getId());
         Optional<OvernightParking> optional = overnightParkingRepository.findById(overnightParkingId);
@@ -185,7 +218,6 @@ public class JourneyServiceImpl implements JourneyService {
         OvernightParking overnightParking = new OvernightParking();
         overnightParking.setId(overnightParkingId);
 
-        //overnightParking.setOvernightDate(LocalDate.now());
         overnightParking.setJourney(journey);
         overnightParking.setParkSpot(parkSpot);
 

@@ -10,11 +10,14 @@ import com.tmv.core.util.MultiFormatDateParser;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.LineString;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,8 +179,11 @@ public class JourneyController extends BaseController {
     public ResponseEntity<ParkSpotDTO> createOvernightParkingForJourney(
             @PathVariable Long journeyId,
             @RequestParam(required = true) String name,
-            @RequestParam(required = false) String description) {
-        ParkSpot createdParking = journeyService.addOvernightParking(journeyId, name, description);
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) boolean createWPPost,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        ParkSpot createdParking = null;
+        createdParking = journeyService.addOvernightParking(journeyId, name, description, createWPPost, date);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toParkSpotDTO(createdParking));
     }
 
@@ -199,6 +205,9 @@ public class JourneyController extends BaseController {
     @PutMapping("/api/v1/journeys/{id}/start")
     @ResponseBody
     ResponseEntity<JourneyDTO> startJourney(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.badRequest().build();
+        }
         Journey updatedJourney = journeyService.startJourney(id);
         return ResponseEntity.ok(mapper.toJourneyDTO(updatedJourney));
     }
@@ -206,6 +215,9 @@ public class JourneyController extends BaseController {
     @PutMapping("/api/v1/journeys/{id}/end")
     @ResponseBody
     ResponseEntity<JourneyDTO> endJourney(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.badRequest().build();
+        }
         Journey updatedJourney = journeyService.endJourney(id);
         return ResponseEntity.ok(mapper.toJourneyDTO(updatedJourney));
     }

@@ -14,6 +14,7 @@ public class ParkSpotDTO {
     private Long id;
     private String name;
     private String description;
+    private Integer wpPostId;
     private Float lat;
     private Float lng;
 }

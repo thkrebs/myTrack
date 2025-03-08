@@ -14,6 +14,7 @@ public class OvernightParkingFullDTO {
     private Long parkspotId;
     private String name;
     private String description;
+    private Integer wpPostId;
     private float lat;
     private float lng;
     private LocalDate overnightDate;

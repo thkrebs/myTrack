@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 @SpringBootApplication(scanBasePackages={"com.tmv"})
 public class TestingWebApplication {
-
+/*
     @Configuration
     static class TestConfig {
         @Bean
@@ -17,7 +17,7 @@ public class TestingWebApplication {
             return new MapStructMapperImpl(); // Ersatz oder Test-Implementierung
         }
     }
-
+*/
     public static void main(String[] args) {
         SpringApplication.run(TestingWebApplication.class, args);
     }

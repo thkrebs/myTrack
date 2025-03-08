@@ -24,6 +24,7 @@ public class ParkSpot {
 
     private String name;
     private String description;
+    private int wpPostId;
 
     @Column(name = "point", columnDefinition = "geometry(Point, 4326)", nullable = false)
     private Point point;
