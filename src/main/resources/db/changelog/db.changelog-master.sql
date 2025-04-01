@@ -27,7 +27,7 @@ create table position
 
 
 INSERT INTO imei (id, imei, active) VALUES (1, '866069064483413', TRUE);
-INSERT INTO imei (id, imei, active) VALUES (2, '352016706223907', TRUE);
+INSERT INTO imei (id, imei, active) VALUES (2, '352016706223906', TRUE);
 
 CREATE INDEX position_date_idx ON position (datetime,imei)  WITH (deduplicate_items = off);
 CREATE INDEX parkspot_geom_idx ON parkspot USING GIST (point);
