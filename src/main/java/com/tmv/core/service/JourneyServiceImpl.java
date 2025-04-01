@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class JourneyServiceImpl implements JourneyService {
+
+    @Value("${CONCEALMENT_DISTANCE}")
+    private long CONCEALMENT_DISTANCE;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -49,31 +53,18 @@ public class JourneyServiceImpl implements JourneyService {
         this.wordPressPostService = wordPressPostService;
     }
 
-    public LineString trackForJourney(Long journeyId) {
-        Journey journey = journeyRepository.findById(journeyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
-
-        List<String> imeiStrings = extractImeiStrings(journey);
-        List<Position> positions = positionRepository.findByImeiInOrderByDateTimeAsc(imeiStrings);
-
-        return createLineStringFromPositions(positions);
-    }
-
-    public LineString trackForJourneyBetween(Long journeyId, LocalDateTime fromDateTime, LocalDateTime toDateTime) {
-        Journey journey = journeyRepository.findById(journeyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
-
-        List<String> imeiStrings = extractImeiStrings(journey);
-        if ((fromDateTime != null) && (toDateTime != null)) {
-            List<Position> positions = positionRepository.findByImeiInAndDateTimeBetweenOrderByDateTimeAsc(imeiStrings, fromDateTime, toDateTime);
-            return createLineStringFromPositions(positions);
-        } else if (toDateTime == null) {
-            List<Position> positions = positionRepository.findByImeiInAndDateTimeGreaterThanEqualOrderByDateTimeAsc(imeiStrings, fromDateTime);
-            return createLineStringFromPositions(positions);
-        } else {
-            List<Position> positions = positionRepository.findByImeiInAndDateTimeLessThanEqualOrderByDateTimeAsc(imeiStrings, toDateTime);
-            return createLineStringFromPositions(positions);
+    public LineString trackForJourneyBetween(Journey journeyEntity, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition) {
+        List<String> imeiStrings = extractImeiStrings(journeyEntity);
+        List<Position> positions;
+        if (concealLastPosition) {
+            Position lastPosition = getLastPositionForActiveImei(journeyEntity);
+            positions = positionRepository.findByImeiInAndDateTimeConcealedOrderByDateTimeAsc(
+                    imeiStrings, fromDateTime, toDateTime, lastPosition.getPoint().getX(), lastPosition.getPoint().getY(),CONCEALMENT_DISTANCE);
         }
+        else {
+           positions = positionRepository.findByImeiInAndDateTimeBetweenOrderByDateTimeAsc(imeiStrings, fromDateTime, toDateTime);
+        }
+        return createLineStringFromPositions(positions);
     }
 
     public Journey createNewJourney(Journey newJourney) {
@@ -172,6 +163,36 @@ public class JourneyServiceImpl implements JourneyService {
                                 + updatedParking.getId().getJourneyId() + " parkspot id: "
                                 + updatedParking.getId().getParkSpotId()
                         ));
+    }
+
+    public boolean isJourneyActive(Journey journey) {
+        LocalDate currentDate = LocalDate.now();
+        if (journey.getEndDate() == null) { return true; }
+        if (journey.getStartDate() == null) { return true; }
+        // end & start date are not null
+        return !currentDate.isBefore(journey.getStartDate()) && !currentDate.isAfter(journey.getEndDate());
+    }
+
+    public String determineActiveImei(Journey journey) {
+        if (journey == null || journey.getTrackedByImeis() == null || journey.getTrackedByImeis().isEmpty()) {
+            throw new IllegalArgumentException("Journey or associated IMEIs cannot be null/empty.");
+        }
+
+        // Find all active IMEIs
+        List<Imei> activeImeis = journey.getTrackedByImeis().stream()
+                .filter(Imei::isActive) // filter only active IMEIS
+                .toList();
+
+        if (activeImeis.size() == 1) {
+            // Found exactly one
+            return activeImeis.getFirst().getImei();
+        } else if (activeImeis.size() > 1) {
+            log.warn("Journey with ID {} has more than one active IMEI: {}",
+                    journey.getId(),
+                    activeImeis.stream().map(Imei::getImei).toList());
+            return activeImeis.getFirst().getImei();
+        }
+        return null;
     }
 
     protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName,

@@ -41,3 +41,6 @@ keystore.p12
 gradle-wrapper.*
 gradlew.*
 gradlew
+/src/main/resources/myserver.key
+/src/main/resources/server.csr
+/src/main/resources/thkrebs_ddns_net.pem

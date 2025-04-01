@@ -24,10 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -76,84 +73,6 @@ class JourneyServiceImplTest {
         journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService);
         // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
         ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
-    }
-
-    @Test
-    void trackForJourney_success() {
-        // Arrange
-        Long journeyId = 1L;
-        final String imei = "12345";
-        final LocalDateTime dt = LocalDateTime.now();
-
-        Imei imei1 = new Imei(imei, true, null, null, null);
-        Imei imei2 = new Imei("67890", true, null, null, null);
-
-        Journey journey = new Journey();
-        journey.setTrackedByImeis(new HashSet<>(List.of(imei1, imei2)));
-
-        Position position1 = new Position(1.0f,2.0f, (short) 3, (short) 4, (byte) 5, (short) 6,imei, dt );
-        Position position2 = new Position(3.0f,4.0f, (short) 4, (short) 5, (byte) 6, (short) 7,imei, dt );
-
-        List<Position> positions = List.of(position1, position2);
-
-        Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
-        Mockito.when(positionRepository.findByImeiInOrderByDateTimeAsc(anyList())).thenReturn(positions);
-
-        // Act
-        LineString result = journeyService.trackForJourney(journeyId);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.getNumPoints());
-        assertEquals(1.0, result.getCoordinateN(0).getX());
-        assertEquals(2.0, result.getCoordinateN(0).getY());
-        assertEquals(3.0, result.getCoordinateN(1).getX());
-        assertEquals(4.0, result.getCoordinateN(1).getY());
-
-        verify(journeyRepository, times(1)).findById(journeyId);
-        verify(positionRepository, times(1)).findByImeiInOrderByDateTimeAsc(imeiCaptor.capture());
-        List<String> capturedImeis = imeiCaptor.getValue();
-        assertEquals(2, capturedImeis.size());
-        assertTrue(capturedImeis.contains("12345"));
-        assertTrue(capturedImeis.contains("67890"));
-    }
-
-    @Test
-    void trackForJourney_journeyNotFound_throwsException() {
-        // Arrange
-        Long journeyId = 1L;
-        Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
-                journeyService.trackForJourney(journeyId));
-
-        assertEquals("Journey not found with id: " + journeyId, exception.getMessage());
-        verify(journeyRepository, times(1)).findById(journeyId);
-        verifyNoInteractions(positionRepository);
-    }
-
-    @Test
-    void trackForJourney_noPositions_returnsEmptyLineString() {
-        // Arrange
-        Long journeyId = 1L;
-
-        Imei imei1 = new Imei("98765", true, null, null, null);
-        Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(imei1));
-
-        Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
-        Mockito.when(positionRepository.findByImeiInOrderByDateTimeAsc(anyList())).thenReturn(List.of());
-
-        // Act
-        LineString result = journeyService.trackForJourney(journeyId);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(0, result.getNumPoints());
-
-        verify(journeyRepository, times(1)).findById(journeyId);
-        verify(positionRepository, times(1)).findByImeiInOrderByDateTimeAsc(anyList());
     }
 
 
@@ -401,4 +320,107 @@ class JourneyServiceImplTest {
         verify(positionRepository, times(1)).findTopByImeiOrderByDateTimeDesc(imei.getImei());
         verifyNoInteractions(parkSpotRepository);
     }
+
+
+    @Test
+    void testIsJourneyActive_activeJourney() {
+        // Setup
+        LocalDate now = LocalDate.now();
+        Journey journey = new Journey() ;
+        journey.setStartDate(now.minusDays(1));
+        journey.setEndDate(now.plusDays(1));
+
+        // Act & Assert
+        assertTrue(journeyService.isJourneyActive(journey));
+    }
+
+    @Test
+    void testIsJourneyActive_journeyEnded() {
+        LocalDate now = LocalDate.now();
+        Journey journey = new Journey() ;
+        journey.setStartDate(now.minusDays(2));
+        journey.setEndDate(now.minusDays(1));
+        assertFalse(journeyService.isJourneyActive(journey));
+    }
+
+    @Test
+    void testIsJourneyActive_journeyNotStarted() {
+        LocalDate now = LocalDate.now();
+        Journey journey = new Journey() ;
+        journey.setStartDate(now.plusDays(1));
+        journey.setEndDate(now.minusDays(2));
+        assertFalse(journeyService.isJourneyActive(journey));
+    }
+
+    @Test
+    void testIsJourneyActive_nullDates() {
+        Journey journey = new Journey();
+        assertTrue(journeyService.isJourneyActive(journey));
+    }
+
+
+    @Test
+    void testDetermineActiveImei_singleActive() {
+        // Setup
+        Journey journey = new Journey();
+        journey.setTrackedByImeis(Set.of(
+                new Imei("12345", false,null,null,null),
+                new Imei("67890", true, null, null,null)
+        ));
+
+        // Act
+        String activeImei = journeyService.determineActiveImei(journey);
+
+        // Assert
+        assertEquals("67890", activeImei);
+    }
+
+    @Test
+    void testDetermineActiveImei_multipleActive() {
+        // Setup
+        Journey journey = new Journey();
+        journey.setTrackedByImeis(Set.of(
+                new Imei("12345", true,null,null,null),
+                new Imei("67890", true, null, null, null)
+        ));
+
+        // Act
+        String activeImei = journeyService.determineActiveImei(journey);
+
+        // Assert
+        assertEquals("12345", activeImei);
+    }
+
+    @Test
+    void testDetermineActiveImei_noActive() {
+        Journey journey = new Journey();
+        journey.setTrackedByImeis(Set.of(
+                new Imei("12345", false,null,null,null),
+                new Imei("67890", false, null, null, null)
+        ));
+
+        String activeImei = journeyService.determineActiveImei(journey);
+        assertNull(activeImei);
+    }
+
+    @Test
+    void testDetermineActiveImei_emptyList() {
+        Journey journey = new Journey();
+        journey.setTrackedByImeis(Set.of());
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () ->
+                journeyService.determineActiveImei(journey)
+        );
+        assertEquals("Journey or associated IMEIs cannot be null/empty.", exception.getMessage());
+    }
+
+    @Test
+    void testDetermineActiveImei_nullJourney() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () ->
+                journeyService.determineActiveImei(null)
+        );
+        assertEquals("Journey or associated IMEIs cannot be null/empty.", exception.getMessage());
+    }
+
+
 }

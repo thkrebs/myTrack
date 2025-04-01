@@ -5,24 +5,31 @@ import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Journey;
 import com.tmv.core.model.OvernightParking;
 import com.tmv.core.model.ParkSpot;
+import com.tmv.core.model.Position;
 import com.tmv.core.service.JourneyServiceImpl;
+import com.tmv.core.service.PositionServiceImpl;
 import com.tmv.core.util.MultiFormatDateParser;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.tmv.core.util.Distance.calculateDistance;
 
 //TODO intro REST method to mark current position of journey -> use active imeis last position
 //     parameter and description (optional)
@@ -42,10 +49,15 @@ import java.util.Map;
 public class JourneyController extends BaseController {
 
     private final JourneyServiceImpl journeyService;
+    private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
-    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
+    @Value("${CONCEALMENT_DISTANCE}")
+    private long CONCEALMENT_DISTANCE;
+
+    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService, PositionServiceImpl positionService) {
         this.journeyService = journeyService;
+        this.positionService = positionService;
         this.mapper = mapstructMapper;
     }
 
@@ -58,16 +70,36 @@ public class JourneyController extends BaseController {
      */
     @GetMapping(value = "/api/v1/journeys/{journey}/track", produces = "application/json")
     Map<String, Object> currentTrack(@PathVariable Long journey, @RequestParam(required = false) Map<String, String> params) {
-        // get route
-        LineString track = getTrack(journey, params);
-
-        // get all parkspots
+        // check if journey is still active, current date is between start and end date.
+        // If yes, the returned track will not be current
         Journey journeyEntity = journeyService.getJourneyById(journey)
                 .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journey));
+
+        // for completed journeys we do no filtering out of positions
+        AtomicBoolean concealTrack = new AtomicBoolean(journeyService.isJourneyActive(journeyEntity));
+        // Überprüfen, ob "conceal" in den Parametern definiert ist
+        String concealParam = params.get("conceal");
+        if (concealParam != null) {
+            // "conceal" aus den Parametern in einen boolean umwandeln und fullTrack überschreiben
+            concealTrack.set(Boolean.parseBoolean(concealParam));
+        }
+
+
+        // get route, if demanded by fullTrack filter out positions to near by
+        LineString track = getTrack(journeyEntity, params, concealTrack.get());
+
+        // get all parkspots
         List<ParkSpot> parkSpots = journeyEntity.getOvernightParkings().stream()
                 .map(OvernightParking::getParkSpot)
                 .toList();
-
+        Position currentPosition;
+        if (concealTrack.get()) {
+            // we need the current position to apply filtering
+            String activeIMEI = journeyService.determineActiveImei(journeyEntity);
+            currentPosition = positionService.findLast(activeIMEI).iterator().next();
+        } else {
+            currentPosition = null;
+        }
         // Create mutable GeoJson object
         Map<String, Object> geoJson = new java.util.HashMap<>();
         geoJson.put("type", "FeatureCollection");
@@ -78,6 +110,16 @@ public class JourneyController extends BaseController {
         // Populate features with parkSpots, if any
         if (!parkSpots.isEmpty()) {
             parkSpots.forEach(parkSpot -> {
+                if (concealTrack.get() && currentPosition != null) {
+                    double distance = calculateDistance(
+                            currentPosition.getPoint().getY(), currentPosition.getPoint().getX(),             // Aktuelle Position: Lat, Lng
+                            parkSpot.getPoint().getY(), parkSpot.getPoint().getX()        // ParkSpot Position: Lat, Lng
+                    );
+                    if (distance <= CONCEALMENT_DISTANCE) {
+                        return; // skip this spot since too near
+                    }
+                }
+
                 Map<String, Object> geometry = new java.util.HashMap<>();
                 geometry.put("type", "Point");
                 geometry.put("coordinates", List.of(parkSpot.getPoint().getX(), parkSpot.getPoint().getY()));
@@ -240,27 +282,88 @@ public class JourneyController extends BaseController {
     /**
      * Retrieves the track associated with a specified journey and optional time parameters.
      *
-     * @param journeyId The unique identifier of the journey whose track is being retrieved.
+     * @param journeyEntity The unique identifier of the journey whose track is being retrieved.
      * @param params A map of parameters where optional keys include:
      *               "from" - The starting date/time of the track range in a supported format.
      *               "to" - The ending date/time of the track range in a supported format.
      * @return A LineString object representing the track of the journey over the specified range,
      *         or the full journey track if no time parameters are specified.
      */
-    private LineString getTrack(Long journeyId, Map<String, String> params) {
-        if (params.containsKey("from")) {
-            LocalDateTime fromDateTime = MultiFormatDateParser.parseDate(params.get("from"));
-            LocalDateTime toDateTime = params.containsKey("to")
-                    ? MultiFormatDateParser.parseDate(params.get("to"))
-                    : null;
-            return journeyService.trackForJourneyBetween(journeyId, fromDateTime, toDateTime);
+    private LineString getTrack(Journey journeyEntity, Map<String, String> params, boolean fullTrack) {
+        // use calcuate date and dispatch to appropriate journeyService
+        LocalDateTime fromDateTime = calculateFromDate(journeyEntity, params);
+        LocalDateTime toDateTime = calculateEndDate(journeyEntity, params);
+
+        if (fromDateTime != null) { // if no fromDate journey track cannot be retrieved
+            return journeyService.trackForJourneyBetween(journeyEntity, fromDateTime, toDateTime, fullTrack);
         }
 
-        if (params.containsKey("to")) {
-            LocalDateTime toDateTime = MultiFormatDateParser.parseDate(params.get("to"));
-            return journeyService.trackForJourneyBetween(journeyId, null, toDateTime);
-        }
-        return journeyService.trackForJourney(journeyId);
+        GeometryFactory geometryFactory = new GeometryFactory();
+        return geometryFactory.createLineString();
     }
 
+    // if params has no startDate use journey startDate
+    // if params is specified it is used if within journey date boundaries
+    private LocalDateTime calculateFromDate(Journey journeyEntity, Map<String, String> params) {
+        LocalDateTime journeyStartDateTime = journeyEntity.getStartDate().atStartOfDay();
+        LocalDateTime journeyEndDateTime = journeyEntity.getEndDate().atStartOfDay();
+
+        String fromParam = params.get("from");
+        LocalDateTime fromDateTime = journeyStartDateTime; // Standardmäßig auf journeyStartDate setzen
+
+        if (fromParam != null) {
+            LocalDateTime fromParamDate = MultiFormatDateParser.parseDate(fromParam); // Parameter in ein LocalDate umwandeln
+
+            // Prüfen, ob der Parameter innerhalb des Start- und Enddatums der Journey liegt
+            if ((fromParamDate.isEqual(journeyStartDateTime) || fromParamDate.isAfter(journeyStartDateTime))
+                    && (fromParamDate.isEqual(journeyEndDateTime) || fromParamDate.isBefore(journeyEndDateTime))) {
+                fromDateTime = fromParamDate; // Das fromParam-Datum verwenden
+            }
+        }
+        return fromDateTime;
+    }
+
+    // if params has no endDate use journey endDate
+    // if params is specified it is used if within journey date boundaries
+    // if no enddates are specified current date is used
+    private LocalDateTime calculateEndDate(Journey journeyEntity, Map<String, String> params) {
+        // Hole das Start- und Enddatum aus der Journey
+        LocalDateTime journeyStartDateTime = journeyEntity.getStartDate().atStartOfDay();
+        LocalDateTime journeyEndDateTime = journeyEntity.getEndDate().atStartOfDay();
+
+        // Standardwert ist das aktuelle Datum, falls keine weiteren Werte angegeben sind
+        LocalDateTime endDateTime = LocalDateTime.now();
+
+        // Versuch, das "to"-Datum aus den Parametern zu lesen
+        String toParam = params.get("to");
+
+        if (journeyEndDateTime != null) {
+            // Verwende journey.getEndDate(), falls gesetzt
+            endDateTime = journeyEndDateTime;
+        }
+        if (toParam != null) {
+            // Versuche, das "to"-Parameter-Datum zu parsieren
+            LocalDateTime toParamDateTime = MultiFormatDateParser.parseDate(toParam);
+
+            // Prüfen, ob das to-Date innerhalb des gültigen Zeitraums liegt
+            if ((toParamDateTime.isEqual(journeyStartDateTime) || toParamDateTime.isAfter(journeyStartDateTime))
+                    && (toParamDateTime.isEqual(endDateTime) || toParamDateTime.isBefore(endDateTime))) {
+                endDateTime = toParamDateTime;
+            }
+        }
+        return endDateTime;
+    }
+
+    private List<ParkSpot> filterNearbyParkSpots(List<ParkSpot> parkSpots, Point currentPoint) {
+        // Führe Filterung durch
+        return parkSpots.stream()
+                .filter(parkSpot -> {
+                    double distance = calculateDistance(
+                            currentPoint.getY(), currentPoint.getX(),                // Aktuelle Position: Lat, Lng
+                            parkSpot.getPoint().getY(), parkSpot.getPoint().getX() // Parkspot Position: Lat, Lng
+                    );
+                    return distance <= 5.0; // Filtere Parkspots innerhalb von 5 km
+                })
+                .toList(); // Gibt die gefilterte Liste zurück
+    }
 }
