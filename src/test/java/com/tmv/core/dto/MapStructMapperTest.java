@@ -222,8 +222,8 @@ class MapStructMapperTest {
         PositionDTO positionDTO = mapper.toPositionDTO(position);
 
         assertNotNull(positionDTO);
-        assertEquals(1.234f, positionDTO.getLat());
-        assertEquals(5.678f, positionDTO.getLng());
+        assertEquals(5.678f, positionDTO.getLat());
+        assertEquals(1.234f, positionDTO.getLng());
         assertEquals(1, positionDTO.getAltitude());
         assertEquals(2, positionDTO.getAngle());
         assertEquals(3, positionDTO.getSatellites());
