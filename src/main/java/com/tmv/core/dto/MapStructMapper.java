@@ -40,8 +40,8 @@ public interface MapStructMapper {
     ParkSpotDTO toParkSpotDTO(ParkSpot parkSpot);
 
 
-    @Mapping(target = "lat", expression = "java((float) position.getPoint().getX())")
-    @Mapping(target = "lng", expression = "java((float) position.getPoint().getY())")
+    @Mapping(target = "lat", expression = "java((float) position.getPoint().getY())")
+    @Mapping(target = "lng", expression = "java((float) position.getPoint().getX())")
     PositionDTO toPositionDTO(com.tmv.core.model.Position position);
 
     Iterable<PositionDTO> toPositionDTO(Iterable<com.tmv.core.model.Position> positions);

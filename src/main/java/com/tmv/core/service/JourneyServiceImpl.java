@@ -123,12 +123,11 @@ public class JourneyServiceImpl implements JourneyService {
 
         Journey journey = journeyRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
+
+
         Position lastPosition = getLastPositionForActiveImei(journey);
         // check whether there is already a position in proximity
-        List<ParkSpot> spotsNearBy = parkSpotRepository.findWithinDistance(
-                lastPosition.getPoint().getX(),
-                lastPosition.getPoint().getY(),
-                50);
+        List<ParkSpot> spotsNearBy = getParkspots(journey, lastPosition, 50);
         log.info("Found {} park spots. Will take the first one", spotsNearBy.size());
         if (spotsNearBy.isEmpty()) {
             if (createWPPost) {
@@ -195,6 +194,10 @@ public class JourneyServiceImpl implements JourneyService {
         return null;
     }
 
+    public List<ParkSpot> getNearbyParkSpots(Journey journey, long distanceInMeters) {
+        Position lastPosition = getLastPositionForActiveImei(journey);
+        return getParkspots(journey, lastPosition, distanceInMeters);
+    }
     protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName,
                                                    String parkingSpotDescription, Integer wpPostId, LocalDate date) {
         ParkSpot parkSpot = new ParkSpot();
@@ -249,6 +252,14 @@ public class JourneyServiceImpl implements JourneyService {
         journeyRepository.save(journey);
         parkSpotRepository.save(parkSpot);
         return parkSpot;
+    }
+
+    private List<ParkSpot> getParkspots(Journey journey, Position lastPosition, long distance) {
+        // check whether there is already a position in proximity
+        return parkSpotRepository.findWithinDistance(
+                lastPosition.getPoint().getX(),
+                lastPosition.getPoint().getY(),
+                distance);
     }
 
     private Position getLastPositionForActiveImei(Journey journey) {

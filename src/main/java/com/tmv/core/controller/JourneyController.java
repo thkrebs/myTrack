@@ -84,7 +84,6 @@ public class JourneyController extends BaseController {
             concealTrack.set(Boolean.parseBoolean(concealParam));
         }
 
-
         // get route, if demanded by fullTrack filter out positions to near by
         LineString track = getTrack(journeyEntity, params, concealTrack.get());
 
@@ -229,6 +228,18 @@ public class JourneyController extends BaseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toParkSpotDTO(createdParking));
     }
 
+    @GetMapping("/api/v1/journeys/{journeyId}/nearbyParkspots")
+    @ResponseBody
+    public ResponseEntity<List<ParkSpotDTO>> getNearbyParkingForJourney( @PathVariable Long journeyId, @RequestParam(required = false) Long distance) {
+        Journey journeyEntity = journeyService.getJourneyById(journeyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
+        distance = (distance != null) ? distance : 50L;
+
+        List<ParkSpot> parkspots = journeyService.getNearbyParkSpots(journeyEntity, distance);
+        return ResponseEntity.status(HttpStatus.OK).
+                body(mapper.toParkSpotDTO(parkspots));
+    }
+
     /**
      * Updates the overnight parking details for a specified journey.
      *
@@ -289,13 +300,13 @@ public class JourneyController extends BaseController {
      * @return A LineString object representing the track of the journey over the specified range,
      *         or the full journey track if no time parameters are specified.
      */
-    private LineString getTrack(Journey journeyEntity, Map<String, String> params, boolean fullTrack) {
+    private LineString getTrack(Journey journeyEntity, Map<String, String> params, boolean concealTrack) {
         // use calcuate date and dispatch to appropriate journeyService
         LocalDateTime fromDateTime = calculateFromDate(journeyEntity, params);
         LocalDateTime toDateTime = calculateEndDate(journeyEntity, params);
 
         if (fromDateTime != null) { // if no fromDate journey track cannot be retrieved
-            return journeyService.trackForJourneyBetween(journeyEntity, fromDateTime, toDateTime, fullTrack);
+            return journeyService.trackForJourneyBetween(journeyEntity, fromDateTime, toDateTime, concealTrack);
         }
 
         GeometryFactory geometryFactory = new GeometryFactory();
