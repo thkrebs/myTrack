@@ -74,8 +74,8 @@ public class PositionControllerTest {
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
-                .andExpect(jsonPath("$.*.lat").value(8.0)) // Validate specific JSON property (example field 'latitude')
-                .andExpect(jsonPath("$.*.lng").value(50.0))
+                .andExpect(jsonPath("$.*.lat").value(50.0)) // Validate specific JSON property (example field 'latitude')
+                .andExpect(jsonPath("$.*.lng").value(8.0))
                 .andExpect(jsonPath("$.*.altitude").value(1))
                 .andExpect(jsonPath("$.*.angle").value(2))
                 .andExpect(jsonPath("$.*.satellites").value(3))
