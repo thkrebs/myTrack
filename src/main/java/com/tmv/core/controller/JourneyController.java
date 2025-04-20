@@ -423,6 +423,6 @@ public class JourneyController extends BaseController {
      */
     private String generateCacheKey(Long journeyId, int intValue) {
         // Generate a unique key based on the inputs
-        return String.format("%d-%d-%d", journeyId, intValue);
+        return String.format("%d-%d", journeyId, intValue);
     }
 }
