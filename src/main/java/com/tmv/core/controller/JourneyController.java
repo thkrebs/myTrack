@@ -60,7 +60,7 @@ public class JourneyController extends BaseController {
     @Value("${cache.track.liveness}")
     private long CACHE_LIVENESS;
 
-    private final long CACHE_LIVENESS_FOR_COMPLETED_JOURNEY = Long.MAX_VALUE;
+    private final long CACHE_LIVENESS_FOR_COMPLETED_JOURNEY = Integer.MAX_VALUE;
 
 
     // cache keys
@@ -212,7 +212,7 @@ public class JourneyController extends BaseController {
         Journey journeyEntity = getValidatedJourney(id);
         String cacheKey = generateCacheKey(id, ID_FULL);
         trackCache.remove(cacheKey);
-        Map<String, Object> geoJson = createGeoJsonData(journeyEntity, null, false);
+        Map<String, Object> geoJson = createGeoJsonData(journeyEntity, new HashMap<>(), false);
         trackCache.put(cacheKey, geoJson, CACHE_LIVENESS_FOR_COMPLETED_JOURNEY);
 
         return ResponseEntity.ok(mapper.toJourneyDTO(updatedJourney));
