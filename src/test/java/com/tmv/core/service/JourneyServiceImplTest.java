@@ -62,6 +62,9 @@ class JourneyServiceImplTest {
     @InjectMocks
     private JourneyServiceImpl journeyService;
 
+    @InjectMocks
+    private PositionServiceImpl positionService;
+
     @Captor
     private ArgumentCaptor<List<String>> imeiCaptor;
 
@@ -70,7 +73,7 @@ class JourneyServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService);
+        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService);
         // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
         ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
     }

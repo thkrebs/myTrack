@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface JourneyService {
@@ -35,4 +36,9 @@ public interface JourneyService {
     LineString trackForJourneyBetween(Journey journeyId, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition);
 
     List<ParkSpot> getNearbyParkSpots(Journey journey, long distanceInMeters);
-}
+
+    Journey getValidatedJourney(Long journeyId) ;
+
+    Map<String, Object> createGeoJsonData(Journey journey, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealTrack);
+
+    }

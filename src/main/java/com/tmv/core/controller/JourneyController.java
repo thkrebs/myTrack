@@ -82,7 +82,11 @@ public class JourneyController extends BaseController {
      */
     @GetMapping(value = "/api/v1/journeys/{journey}/track", produces = "application/json")
     Map<String, Object> currentTrack(@PathVariable Long journey, @RequestParam(required = false) Map<String, String> params) {
-        Journey journeyEntity = getValidatedJourney(journey);
+        Journey journeyEntity = journeyService.getValidatedJourney(journey);
+
+        // use calcuate date and dispatch to appropriate journeyService
+        LocalDateTime fromDateTime = calculateFromDate(journeyEntity, params);
+        LocalDateTime toDateTime = calculateEndDate(journeyEntity, params);
 
         boolean concealTrack = determineConcealment(journeyEntity, params);
         String cacheKey = generateCacheKey(journey, concealTrack ? ID_CONCEAL : ID_FULL);
@@ -93,7 +97,7 @@ public class JourneyController extends BaseController {
         }
 
         log.info("Cache miss for currentTrack for journey {}", journey);
-        Map<String, Object> geoJson = createGeoJsonData(journeyEntity, params, concealTrack);
+        Map<String, Object> geoJson = journeyService.createGeoJsonData(journeyEntity, fromDateTime, fromDateTime, concealTrack);
         trackCache.put(cacheKey, geoJson, CACHE_LIVENESS);
 
         return geoJson;
@@ -124,7 +128,7 @@ public class JourneyController extends BaseController {
     @GetMapping("/api/v1/journeys/{id}")
     @ResponseBody
     ResponseEntity<JourneyDTO> one(@PathVariable Long id) {
-        Journey journeyEntity = getValidatedJourney(id);
+        Journey journeyEntity = journeyService.getValidatedJourney(id);
         return ResponseEntity.ok(mapper.toJourneyDTO(journeyEntity));
     }
 
@@ -166,7 +170,7 @@ public class JourneyController extends BaseController {
     @ResponseBody
     public ResponseEntity<List<ParkSpotDTO>> getNearbyParkingForJourney(@PathVariable Long journeyId, @RequestParam(required = false) Long distance) {
 
-        Journey journeyEntity =  getValidatedJourney(journeyId);
+        Journey journeyEntity =  journeyService.getValidatedJourney(journeyId);
         distance = (distance != null) ? distance : 50L;
 
         List<ParkSpot> parkspots = journeyService.getNearbyParkSpots(journeyEntity, distance);
@@ -209,10 +213,15 @@ public class JourneyController extends BaseController {
         Journey updatedJourney = journeyService.endJourney(id);
 
         // cache the track; validity can be long
-        Journey journeyEntity = getValidatedJourney(id);
+        Journey journeyEntity = journeyService.getValidatedJourney(id);
         String cacheKey = generateCacheKey(id, ID_FULL);
+
+        // use calcuate date and dispatch to appropriate journeyService
+        LocalDateTime fromDateTime = calculateFromDate(journeyEntity, null);
+        LocalDateTime toDateTime = calculateEndDate(journeyEntity, null);
+
         trackCache.remove(cacheKey);
-        Map<String, Object> geoJson = createGeoJsonData(journeyEntity, new HashMap<>(), false);
+        Map<String, Object> geoJson = journeyService.createGeoJsonData(journeyEntity, fromDateTime, toDateTime,false);
         trackCache.put(cacheKey, geoJson, CACHE_LIVENESS_FOR_COMPLETED_JOURNEY);
 
         return ResponseEntity.ok(mapper.toJourneyDTO(updatedJourney));
@@ -251,28 +260,6 @@ public class JourneyController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Retrieves the track associated with a specified journey and optional time parameters.
-     *
-     * @param journeyEntity The unique identifier of the journey whose track is being retrieved.
-     * @param params        A map of parameters where optional keys include:
-     *                      "from" - The starting date/time of the track range in a supported format.
-     *                      "to" - The ending date/time of the track range in a supported format.
-     * @return A LineString object representing the track of the journey over the specified range,
-     * or the full journey track if no time parameters are specified.
-     */
-    private LineString getTrack(Journey journeyEntity, Map<String, String> params, boolean concealTrack) {
-        // use calcuate date and dispatch to appropriate journeyService
-        LocalDateTime fromDateTime = calculateFromDate(journeyEntity, params);
-        LocalDateTime toDateTime = calculateEndDate(journeyEntity, params);
-
-        if (fromDateTime != null) { // if no fromDate journey track cannot be retrieved
-            return journeyService.trackForJourneyBetween(journeyEntity, fromDateTime, toDateTime, concealTrack);
-        }
-
-        GeometryFactory geometryFactory = new GeometryFactory();
-        return geometryFactory.createLineString();
-    }
 
     // if params has no startDate use journey startDate
     // if params is specified it is used if within journey date boundaries
@@ -280,7 +267,7 @@ public class JourneyController extends BaseController {
         LocalDateTime journeyStartDateTime = journeyEntity.getStartDate().atStartOfDay();
         LocalDateTime journeyEndDateTime = journeyEntity.getEndDate().atStartOfDay();
 
-        String fromParam = params.get("from");
+        String fromParam = (params != null) ? params.get("from") : null;
         LocalDateTime fromDateTime = journeyStartDateTime; // Standardmäßig auf journeyStartDate setzen
 
         if (fromParam != null) {
@@ -307,7 +294,7 @@ public class JourneyController extends BaseController {
         LocalDateTime endDateTime = LocalDateTime.now();
 
         // Versuch, das "to"-Datum aus den Parametern zu lesen
-        String toParam = params.get("to");
+        String toParam = (params != null ) ? params.get("to") : null;
 
         if (journeyEndDateTime != null) {
             // Verwende journey.getEndDate(), falls gesetzt
@@ -351,85 +338,6 @@ public class JourneyController extends BaseController {
         return String.format("%d-%d", journeyId, intValue);
     }
 
-    private Position getCurrentPosition(Journey journey) {
-        String activeIMEI = journeyService.determineActiveImei(journey);
-        return positionService.findLast(activeIMEI).iterator().next();
-    }
-    private List<Map<String, Object>> createFeatures(LineString track, List<ParkSpot> parkSpots,
-                                                     Position currentPosition, boolean concealTrack) {
-        List<Map<String, Object>> features = new ArrayList<>();
-        addParkSpotFeatures(parkSpots, currentPosition, concealTrack, features);
-        addRouteFeature(track, features);
-        return features;
-    }
-
-    private void addParkSpotFeatures(List<ParkSpot> parkSpots, Position currentPosition, boolean concealTrack,
-                                     List<Map<String, Object>> features) {
-        parkSpots.forEach(parkSpot -> {
-            if (concealTrack && currentPosition != null && !isWithinConcealmentDistance(currentPosition, parkSpot)) {
-                return; // Skip park spot if too close
-            }
-
-            Map<String, Object> geometry = new HashMap<>();
-            geometry.put("type", "Point");
-            geometry.put("coordinates", List.of(parkSpot.getPoint().getX(), parkSpot.getPoint().getY()));
-
-            Map<String, Object> properties = new HashMap<>();
-            properties.put("name", parkSpot.getName() != null ? parkSpot.getName() : "Unnamed");
-            properties.put("description", parkSpot.getDescription() != null ? parkSpot.getDescription() : "");
-
-            Map<String, Object> feature = new HashMap<>();
-            feature.put("type", "Feature");
-            feature.put("geometry", geometry);
-            feature.put("properties", properties);
-
-            features.add(feature);
-        });
-    }
-
-    private boolean isWithinConcealmentDistance(Position currentPosition, ParkSpot parkSpot) {
-        double distance = calculateDistance(
-                currentPosition.getPoint().getY(), currentPosition.getPoint().getX(),
-                parkSpot.getPoint().getY(), parkSpot.getPoint().getX()
-        );
-        return distance <= CONCEALMENT_DISTANCE;
-    }
-
-    private void addRouteFeature(LineString track, List<Map<String, Object>> features) {
-        List<List<Double>> coordinates = Arrays.stream(track.getCoordinates())
-                .map(coord -> List.of(coord.getX(), coord.getY()))
-                .toList();
-
-        Map<String, Object> geometry = new HashMap<>();
-        geometry.put("type", "LineString");
-        geometry.put("coordinates", coordinates);
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("name", "Route");
-        properties.put("description", "Track of the Journey");
-
-        Map<String, Object> feature = new HashMap<>();
-        feature.put("type", "Feature");
-        feature.put("geometry", geometry);
-        feature.put("properties", properties);
-
-        features.add(feature);
-    }
-
-    private Map<String, Object> createGeoJsonData(Journey journey, Map<String, String> params, boolean concealTrack) {
-        LineString track = getTrack(journey, params, concealTrack);
-        List<ParkSpot> parkSpots = journey.getOvernightParkings().stream()
-                .map(OvernightParking::getParkSpot)
-                .toList();
-        Position currentPosition = concealTrack ? getCurrentPosition(journey) : null;
-
-        Map<String, Object> geoJson = new HashMap<>();
-        geoJson.put("type", "FeatureCollection");
-        geoJson.put("features", createFeatures(track, parkSpots, currentPosition, concealTrack));
-
-        return geoJson;
-    }
-
     private boolean isCacheValid(String cacheKey) {
         return trackCache.isValid(cacheKey);
     }
@@ -445,8 +353,4 @@ public class JourneyController extends BaseController {
         return isActive;
     }
 
-    private Journey getValidatedJourney(Long journeyId) {
-        return journeyService.getJourneyById(journeyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
-    }
 }

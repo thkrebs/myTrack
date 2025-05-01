@@ -6,6 +6,7 @@ import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
 import com.tmv.core.service.JourneyService;
 import com.tmv.core.service.JourneyServiceImpl;
+import org.aspectj.apache.bcel.classfile.Code;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 
@@ -73,6 +75,7 @@ class JourneyControllerTest {
     void shouldReturnJourneyById() throws Exception {
         // Mocking service response
         given(journeyService.getJourneyById(1L)).willReturn(Optional.of(testJourney));
+        Mockito.when(journeyService.getValidatedJourney(1L)).thenReturn(testJourney);
 
         // Testing the endpoint
         mockMvc.perform(get("/api/v1/journeys/1")
@@ -89,7 +92,7 @@ class JourneyControllerTest {
     void shouldReturn404WhenJourneyNotFound() throws Exception {
         // Mocking service response for a non-existent journey
         given(journeyService.getJourneyById(1L)).willReturn(Optional.empty());
-
+        Mockito.when(journeyService.getValidatedJourney(1L)).thenThrow(new ResourceNotFoundException("Journey not found with id: " + 1));
         // Testing the endpoint
         mockMvc.perform(get("/api/v1/journeys/1")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -190,8 +193,12 @@ class JourneyControllerTest {
         Journey mockJourney = new Journey();
         mockJourney.setId(journeyId);
         mockJourney.setEndDate(LocalDate.now());
+        mockJourney.setStartDate(LocalDate.now().minusDays(1));
+
 
         Mockito.when(journeyService.endJourney(journeyId)).thenReturn(mockJourney);
+        Mockito.when(journeyService.getValidatedJourney(journeyId)).thenReturn(mockJourney);
+        Mockito.when(journeyService.createGeoJsonData(mockJourney, null, mockJourney.getEndDate().atStartOfDay(),false)).thenReturn(new HashMap<>());
 
         mockMvc.perform(put("/api/v1/journeys/{id}/end", journeyId))
                 .andExpect(status().isOk());

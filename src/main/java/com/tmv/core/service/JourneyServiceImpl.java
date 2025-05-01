@@ -18,10 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.tmv.core.util.Distance.calculateDistance;
 
 @Slf4j
 @Service
@@ -33,7 +33,6 @@ public class JourneyServiceImpl implements JourneyService {
     @PersistenceContext
     private EntityManager entityManager;
 
-
     private final PositionRepository positionRepository;
     private final GeometryFactory geomFactory;
     private final JourneyRepository journeyRepository;
@@ -41,8 +40,9 @@ public class JourneyServiceImpl implements JourneyService {
     private final OvernightParkingRepository overnightParkingRepository;
     private final ImeiRepository imeiRepository;
     private final WordPressPostService wordPressPostService;
+    private final PositionService positionService;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
@@ -51,6 +51,7 @@ public class JourneyServiceImpl implements JourneyService {
         this.overnightParkingRepository = overnightParkingRepository;
         this.imeiRepository = imeiRepository;
         this.wordPressPostService = wordPressPostService;
+        this.positionService = positionService;
     }
 
     public LineString trackForJourneyBetween(Journey journeyEntity, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition) {
@@ -198,6 +199,121 @@ public class JourneyServiceImpl implements JourneyService {
         Position lastPosition = getLastPositionForActiveImei(journey);
         return getParkspots(journey, lastPosition, distanceInMeters);
     }
+
+
+    public Journey getValidatedJourney(Long journeyId) {
+        return getJourneyById(journeyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
+    }
+
+    public Map<String, Object> createGeoJsonData(Journey journey, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealTrack) {
+        LineString track = getTrack(journey, fromDateTime, toDateTime, concealTrack);
+        List<ParkSpot> parkSpots = journey.getOvernightParkings().stream()
+                .map(OvernightParking::getParkSpot)
+                .toList();
+        Position currentPosition = concealTrack ? getCurrentPosition(journey) : null;
+
+        Map<String, Object> geoJson = new HashMap<>();
+        geoJson.put("type", "FeatureCollection");
+        geoJson.put("features", createFeatures(track, parkSpots, currentPosition, concealTrack));
+
+        return geoJson;
+    }
+
+
+    private Position getCurrentPosition(Journey journey) {
+        String activeIMEI = determineActiveImei(journey);
+        return positionService.findLast(activeIMEI).iterator().next();
+    }
+
+    private List<Map<String, Object>> createFeatures(LineString track, List<ParkSpot> parkSpots,
+                                                     Position currentPosition, boolean concealTrack) {
+        List<Map<String, Object>> features = new ArrayList<>();
+        addParkSpotFeatures(parkSpots, currentPosition, concealTrack, features);
+        addRouteFeature(track, features);
+        return features;
+    }
+
+
+    private void addParkSpotFeatures(List<ParkSpot> parkSpots, Position currentPosition, boolean concealTrack,
+                                     List<Map<String, Object>> features) {
+        parkSpots.forEach(parkSpot -> {
+            if (concealTrack && currentPosition != null && !isWithinConcealmentDistance(currentPosition, parkSpot)) {
+                return; // Skip park spot if too close
+            }
+
+            Map<String, Object> geometry = new HashMap<>();
+            geometry.put("type", "Point");
+            geometry.put("coordinates", List.of(parkSpot.getPoint().getX(), parkSpot.getPoint().getY()));
+
+            Map<String, Object> properties = new HashMap<>();
+            properties.put("name", parkSpot.getName() != null ? parkSpot.getName() : "Unnamed");
+            properties.put("description", parkSpot.getDescription() != null ? parkSpot.getDescription() : "");
+
+            Map<String, Object> feature = new HashMap<>();
+            feature.put("type", "Feature");
+            feature.put("geometry", geometry);
+            feature.put("properties", properties);
+
+            features.add(feature);
+        });
+    }
+
+    private boolean isWithinConcealmentDistance(Position currentPosition, ParkSpot parkSpot) {
+        double distance = calculateDistance(
+                currentPosition.getPoint().getY(), currentPosition.getPoint().getX(),
+                parkSpot.getPoint().getY(), parkSpot.getPoint().getX()
+        );
+        return distance <= CONCEALMENT_DISTANCE;
+    }
+
+    private void addRouteFeature(LineString track, List<Map<String, Object>> features) {
+        List<List<Double>> coordinates = Arrays.stream(track.getCoordinates())
+                .map(coord -> List.of(coord.getX(), coord.getY()))
+                .toList();
+
+        Map<String, Object> geometry = new HashMap<>();
+        geometry.put("type", "LineString");
+        geometry.put("coordinates", coordinates);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("name", "Route");
+        properties.put("description", "Track of the Journey");
+
+        Map<String, Object> feature = new HashMap<>();
+        feature.put("type", "Feature");
+        feature.put("geometry", geometry);
+        feature.put("properties", properties);
+
+        features.add(feature);
+    }
+
+
+    /**
+     * Retrieves the track (route) of a given journey as a {@link LineString}, optionally filtered by date range and concealment settings.
+     *
+     * <p>If the parameter {@code fromDateTime} is not provided (null), an empty {@link LineString} will be returned, as
+     * the track cannot be retrieved without a starting point.</p>
+     *
+     * @param journeyEntity  The {@link Journey} entity for which the track should be retrieved.
+     * @param fromDateTime   The starting point of the date range to filter the journey track. If null, an empty track will be returned.
+     * @param toDateTime     The ending point of the date range to filter the journey track. May be null to include all positions after {@code fromDateTime}.
+     * @param concealTrack   A boolean flag indicating whether the track should be "concealed" (e.g., apply restrictions
+     *                       to hide sensitive points or limit track data visibility).
+     * @return A {@link LineString} representing the journey's track within the specified parameters, or an empty {@link LineString}
+     *         if no valid {@code fromDateTime} is provided.
+     */
+
+    private LineString getTrack(Journey journeyEntity, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealTrack) {
+
+        if (fromDateTime != null) { // if no fromDate journey track cannot be retrieved
+            return trackForJourneyBetween(journeyEntity, fromDateTime, toDateTime, concealTrack);
+        }
+
+        GeometryFactory geometryFactory = new GeometryFactory();
+        return geometryFactory.createLineString();
+    }
+
     protected ParkSpot createNewParkSpotForJourney(Journey journey, Position position, String parkingSpotName,
                                                    String parkingSpotDescription, Integer wpPostId, LocalDate date) {
         ParkSpot parkSpot = new ParkSpot();
