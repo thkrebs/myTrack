@@ -97,7 +97,7 @@ public class JourneyController extends BaseController {
         }
 
         log.info("Cache miss for currentTrack for journey {}", journey);
-        Map<String, Object> geoJson = journeyService.createGeoJsonData(journeyEntity, fromDateTime, fromDateTime, concealTrack);
+        Map<String, Object> geoJson = journeyService.createGeoJsonData(journeyEntity, fromDateTime, toDateTime, concealTrack);
         trackCache.put(cacheKey, geoJson, CACHE_LIVENESS);
 
         return geoJson;
