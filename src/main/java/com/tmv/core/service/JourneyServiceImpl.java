@@ -238,7 +238,7 @@ public class JourneyServiceImpl implements JourneyService {
     private void addParkSpotFeatures(List<ParkSpot> parkSpots, Position currentPosition, boolean concealTrack,
                                      List<Map<String, Object>> features) {
         parkSpots.forEach(parkSpot -> {
-            if (concealTrack && currentPosition != null && !isWithinConcealmentDistance(currentPosition, parkSpot)) {
+            if (concealTrack && currentPosition != null && isWithinConcealmentDistance(currentPosition, parkSpot)) {
                 return; // Skip park spot if too close
             }
 
