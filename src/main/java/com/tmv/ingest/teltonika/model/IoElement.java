@@ -2,26 +2,26 @@ package com.tmv.ingest.teltonika.model;
 
 import lombok.Getter;
 
-import java.util.List;
+import java.util.HashMap;
 
 public class IoElement {
     @Getter private final int eventId;
     @Getter private final int propertiesCount;
-    @Getter private final List<IoProperty> properties;
+    @Getter private final HashMap<Short,IoProperty> properties;
     @Getter private final Byte originType; // Using Byte to replicate nullable byte in C#
 
-    private IoElement(int eventId, int propertiesCount, List<IoProperty> properties, Byte originType) {
+    private IoElement(int eventId, int propertiesCount, HashMap<Short, IoProperty> properties, Byte originType) {
         this.eventId = eventId;
         this.propertiesCount = propertiesCount;
         this.properties = properties;
         this.originType = originType;
     }
 
-    public static IoElement create(int eventId, int propertiesCount, List<IoProperty> properties, Byte originType) {
+    public static IoElement create(int eventId, int propertiesCount, HashMap<Short,IoProperty> properties, Byte originType) {
         return new IoElement(eventId, propertiesCount, properties, originType);
     }
 
-    public static IoElement create(int eventId, int propertiesCount, List<IoProperty> properties) {
+    public static IoElement create(int eventId, int propertiesCount, HashMap<Short,IoProperty> properties) {
         return new IoElement(eventId, propertiesCount, properties, null);
     }
 }

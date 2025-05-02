@@ -51,9 +51,6 @@ public class JourneyController extends BaseController {
     private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
-    @Value("${CONCEALMENT_DISTANCE}")
-    private long CONCEALMENT_DISTANCE;
-
     @Autowired
     private Cache<String, Map<String, Object>> trackCache;
 

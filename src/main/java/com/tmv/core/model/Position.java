@@ -22,7 +22,7 @@ public class Position {
 
     protected Position() {}
 
-    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, LocalDateTime dateTime) {
+    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, LocalDateTime dateTime, long odometer) {
         final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), CoreConfiguration.SRID);
         this.altitude = altitude;
         this.angle = angle;
@@ -37,6 +37,7 @@ public class Position {
     private byte  satellites;
     private short speed;
     private String imei;
+    private long odometer;
     private LocalDateTime dateTime;
 
     @Column(name = "point", columnDefinition = "geometry(Point, 4326)", nullable = false)

@@ -1,15 +1,15 @@
 package com.tmv.ingest.teltonika;
 
+import com.tmv.ingest.teltonika.model.*;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import com.tmv.ingest.teltonika.model.*;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Codec8E {
@@ -60,7 +60,7 @@ public class Codec8E {
         int propertiesCount = reader.readShort();
 
         // IO Element Properties decoding
-        List<IoProperty> ioProperties = decodeIoProperties();
+        HashMap<Short,IoProperty> ioProperties = decodeIoProperties();
         IoElement ioElement = IoElement.create(eventId, propertiesCount, ioProperties);
 
         return AvlData.create(priority, dateTime, gpsElement, ioElement);
@@ -81,8 +81,8 @@ public class Codec8E {
         return GpsElement.create(longitude/divisor, latitude/divisor, altitude, speed, angle, satellites);
     }
 
-    private List<IoProperty> decodeIoProperties() throws IOException {
-        List<IoProperty> result = new ArrayList<>();
+    private HashMap<Short,IoProperty> decodeIoProperties() throws IOException {
+        HashMap<Short, IoProperty> result = new HashMap<>();
 
         // total number of I/O properties which length is 1 byte
         int ioCountInt8 = reader.readShort();
@@ -90,7 +90,7 @@ public class Codec8E {
             short propertyId = reader.readShort();
             long value = reader.readByte();
             log.debug("decoded propertyId {} : {}", propertyId, value);
-            result.add(IoProperty.create(propertyId, value));
+            result.put(propertyId,IoProperty.create(propertyId, value));
         }
 
         // total number of I/O properties which length is 2 bytes
@@ -99,7 +99,7 @@ public class Codec8E {
             short propertyId = reader.readShort();
             long value = reader.readShort();
             log.debug("decoded propertyId (2 bytes) {} : {}", propertyId, value);
-            result.add(IoProperty.create(propertyId, value));
+            result.put(propertyId,IoProperty.create(propertyId, value));
         }
 
         // total number of I/O properties which length is 4 bytes
@@ -108,7 +108,7 @@ public class Codec8E {
             short propertyId = reader.readShort();
             long value = reader.readInt();
             log.debug("decoded propertyId (4 bytes) {} : {}", propertyId, value);
-            result.add(IoProperty.create(propertyId, value));
+            result.put(propertyId,IoProperty.create(propertyId, value));
         }
 
         // total number of I/O properties which length is 8 bytes
@@ -117,7 +117,7 @@ public class Codec8E {
             short propertyId = reader.readShort();
             long value = reader.readLong();
             log.debug("decoded propertyId (8 bytes) {} : {}", propertyId, value);
-            result.add(IoProperty.create(propertyId, value));
+            result.put(propertyId,IoProperty.create(propertyId, value));
         }
 
         int ioCountX = reader.readShort();
@@ -127,7 +127,7 @@ public class Codec8E {
             byte[] value = new byte[elementLength];
             value = reader.readNBytes(elementLength);
             log.debug("decoded multibyte propertyId (byte array) {}", propertyId);
-            result.add(IoProperty.create(propertyId, value));
+            result.put(propertyId,IoProperty.create(propertyId, value));
         }
         return result;
     }

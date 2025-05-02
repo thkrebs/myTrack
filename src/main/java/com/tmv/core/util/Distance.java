@@ -1,7 +1,7 @@
 package com.tmv.core.util;
 
 public class Distance {
-    // Haversine formula to calculate distance between two points
+    // Haversine formula to calculate distance between two points, measureent unit is km
     public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int EARTH_RADIUS_KM = 6371; // Radius der Erde in Kilometern
 
