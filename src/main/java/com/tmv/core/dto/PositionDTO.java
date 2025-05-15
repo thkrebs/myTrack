@@ -22,4 +22,5 @@ public class PositionDTO {
     private LocalDateTime dateTime;
     private Float lat;
     private Float lng;
+    private Long totalOdometer;
 }

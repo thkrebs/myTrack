@@ -49,7 +49,7 @@ public class PositionControllerTest {
     final String imei = "123";
     final LocalDateTime dt = LocalDateTime.now();
 
-    final Position position = new Position(8f,50f, (short) 1, (short) 2, (byte) 3, (short) 4,imei,dt);
+    final Position position = new Position(8f,50f, (short) 1, (short) 2, (byte) 3, (short) 4,imei,dt, (long)100);
 
 
     @Test
@@ -80,6 +80,7 @@ public class PositionControllerTest {
                 .andExpect(jsonPath("$.*.angle").value(2))
                 .andExpect(jsonPath("$.*.satellites").value(3))
                 .andExpect(jsonPath("$.*.speed").value(4))
+                .andExpect(jsonPath("$.*.totalOdometer").value(100))
                 .andExpect(jsonPath("$.*.imei").value(imei));
                 //.andExpect(jsonPath("$.*.dateTime").value(dt.toString()));
          // Validate ;

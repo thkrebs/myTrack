@@ -22,7 +22,7 @@ public class Position {
 
     protected Position() {}
 
-    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, LocalDateTime dateTime, long odometer) {
+    public Position(float lng, float lat, short altitude, short angle, byte satellites, short speed, String imei, LocalDateTime dateTime, long totalOdometer) {
         final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), CoreConfiguration.SRID);
         this.altitude = altitude;
         this.angle = angle;
@@ -31,13 +31,15 @@ public class Position {
         this.imei = imei;
         this.dateTime = dateTime;
         this.point = geometryFactory.createPoint( new Coordinate(lng, lat) );
+        this.totalOdometer = totalOdometer;
     }
     private short altitude;
     private short angle;
     private byte  satellites;
     private short speed;
     private String imei;
-    private long odometer;
+    @Column(nullable = false, columnDefinition = "BIGINT DEFAULT -1")
+    private long totalOdometer;
     private LocalDateTime dateTime;
 
     @Column(name = "point", columnDefinition = "geometry(Point, 4326)", nullable = false)

@@ -44,6 +44,8 @@ public class PositionDataEventListener {
     }
 
     private long getTotalOdometer(IoElement element) {
+        if (element == null) { return -1;}
+
         short TOTAL_ODOMETER = 16;
         IoProperty prop = element.getProperties().get(TOTAL_ODOMETER);
         if (prop != null) {
