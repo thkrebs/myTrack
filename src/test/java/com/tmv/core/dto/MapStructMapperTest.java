@@ -218,7 +218,7 @@ class MapStructMapperTest {
     @Test
     void testToPositionDTO() {
         LocalDateTime dateTime = LocalDateTime.now();
-        Position position = new Position(1.234f, 5.678f, (short) 1, (short) 2, (byte) 3, (short) 4, "12345", dateTime);
+        Position position = new Position(1.234f, 5.678f, (short) 1, (short) 2, (byte) 3, (short) 4, "12345", dateTime, 2);
         PositionDTO positionDTO = mapper.toPositionDTO(position);
 
         assertNotNull(positionDTO);
@@ -230,6 +230,7 @@ class MapStructMapperTest {
         assertEquals(4, positionDTO.getSpeed());
         assertEquals("12345", positionDTO.getImei());
         assertEquals(dateTime, positionDTO.getDateTime());
+        assertEquals(2,positionDTO.getTotalOdometer());
     }
 
     @Test
