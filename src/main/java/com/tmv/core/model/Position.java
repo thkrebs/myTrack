@@ -31,6 +31,7 @@ public class Position {
         this.imei = imei;
         this.dateTime = dateTime;
         this.point = geometryFactory.createPoint( new Coordinate(lng, lat) );
+        this.totalOdometer = totalOdometer;
     }
     private short altitude;
     private short angle;
