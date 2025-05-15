@@ -1,0 +1,1 @@
+ALTER TABLE position ADD COLUMN total_odometer BIGINT NOT NULL DEFAULT -1;

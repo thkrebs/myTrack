@@ -5,6 +5,8 @@ import com.tmv.core.persistence.PositionRepository;
 import com.tmv.ingest.NewTcpDataPacketEvent;
 import com.tmv.ingest.teltonika.model.AvlData;
 import com.tmv.ingest.teltonika.model.GpsElement;
+import com.tmv.ingest.teltonika.model.IoElement;
+import com.tmv.ingest.teltonika.model.IoProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -34,9 +36,21 @@ public class PositionDataEventListener {
             byte satellites = gpsEle.getSatellites();
             short speed = gpsEle.getSpeed();
             LocalDateTime dateTime = element.getDateTime();
-            Position position = new Position(lng, lat, altitude, angle, satellites, speed, imei, dateTime);
+            long totalOdometer = getTotalOdometer(element.getIoElement());
+            Position position = new Position(lng, lat, altitude, angle, satellites, speed, imei, dateTime, totalOdometer);
             repository.save(position);
         }
         log.info("{} new position elements stored for IMEI={}",event.getDataPacket().getAvlData().getData().size(), imei);
+    }
+
+    private long getTotalOdometer(IoElement element) {
+        short TOTAL_ODOMETER = 16;
+        IoProperty prop = element.getProperties().get(TOTAL_ODOMETER);
+        if (prop != null) {
+            return prop.getValue();
+        }
+        else {
+            return -1;
+        }
     }
 }
