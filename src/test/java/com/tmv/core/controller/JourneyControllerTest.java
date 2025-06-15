@@ -6,14 +6,12 @@ import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
 import com.tmv.core.service.JourneyService;
 import com.tmv.core.service.JourneyServiceImpl;
-import org.aspectj.apache.bcel.classfile.Code;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
@@ -192,7 +190,7 @@ class JourneyControllerTest {
 
         Journey mockJourney = new Journey();
         mockJourney.setId(journeyId);
-        mockJourney.setEndDate(LocalDate.now());
+        mockJourney.setEndDate(LocalDate.now().plusDays(1));
         mockJourney.setStartDate(LocalDate.now().minusDays(1));
 
 

@@ -109,8 +109,8 @@ public class JourneyServiceImpl implements JourneyService {
     public Journey endJourney(Long id) {
         Journey journey = journeyRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
-        // do not need an active tracker to end
-        journey.setEndDate(LocalDate.now());
+        // end date is used in between query; without timestamp it equals to start of date. hence I add one day
+        journey.setEndDate(LocalDate.now().plusDays(1)); // end date is used in between query; without timestamp it equals to start of date
         return journeyRepository.save(journey);
     }
 
