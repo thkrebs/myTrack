@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -24,25 +26,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
     }
 
+    // Inside JwtAuthenticationFilter
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // 1. Token aus der Anfrage extrahieren
         String jwtToken = jwtRequestResolver.resolveToken(request);
 
         if (jwtToken != null && jwtService.isValid(jwtToken)) {
-            // 2. Benutzer oder Claims aus Token extrahieren (via JwtService)
             UserDetails userDetails = jwtService.getUserDetails(jwtToken);
 
-            // 3. Manuelle Authentifizierung, wenn noch keine vorhanden ist
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                var authentication = jwtService.getAuthentication(jwtToken); // Hole Authentication-Objekt
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                Authentication authentication = jwtService.getAuthentication(jwtToken);
+
+                // Cast to UsernamePasswordAuthenticationToken to set details
+                if (authentication instanceof UsernamePasswordAuthenticationToken) {
+                    ((UsernamePasswordAuthenticationToken) authentication)
+                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                }
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
-
-        // 4. Weiter in der Filterkette
         filterChain.doFilter(request, response);
     }
 }
