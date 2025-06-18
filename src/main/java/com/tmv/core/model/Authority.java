@@ -15,5 +15,9 @@ public class Authority {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String name;
+    private String name; // E.g., ROLE_ADMIN, READ_PRIVILEGES, WRITE_PRIVILEGES
+
+    @Column(nullable = false)
+    private boolean isRole; // True if it is a role, false if it's an authority (fine-grained permission)
+
 }
