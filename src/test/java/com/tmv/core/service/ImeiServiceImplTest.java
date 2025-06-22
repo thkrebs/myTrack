@@ -5,6 +5,7 @@ import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
+import com.tmv.core.model.User;
 import com.tmv.core.persistence.ImeiRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,13 @@ class ImeiServiceImplTest {
     @InjectMocks
     private ImeiServiceImpl imeiService;
 
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L); // Mocked user ID
+        testUser.setUsername("testuser");
         imeiService = new ImeiServiceImpl(imeiRepository);
     }
 
@@ -216,7 +221,7 @@ class ImeiServiceImplTest {
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
         ;
-        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123");
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser);
         firstImei.setJourneys(Set.of(testJourney));
 
         // Arrange

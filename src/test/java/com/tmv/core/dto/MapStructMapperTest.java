@@ -262,9 +262,18 @@ class MapStructMapperTest {
 
         Date to = calendar.getTime();
 
+        // Mock User (owner)
+        User owner1 = new User();
+        owner1.setId(1L);
+        owner1.setUsername("owner1");
+
+        User owner2 = new User();
+        owner2.setId(2L);
+        owner2.setUsername("owner2");
+
         List<Imei> imeiList = List.of(
-                new Imei("123", true, from, to, "01512"),
-                new Imei("456", false, from, to, "0171")
+                new Imei("123", true, from, to, "01512",owner1),
+                new Imei("456", false, from, to, "0171", owner2)
         );
         Page<Imei> imeiPage = new PageImpl<>(imeiList);
 
@@ -272,16 +281,25 @@ class MapStructMapperTest {
 
         assertNotNull(imeiDTOPage);
         assertEquals(2, imeiDTOPage.getTotalElements());
-        assertEquals("123", imeiDTOPage.getContent().getFirst().getImei());
-        assertTrue(imeiDTOPage.getContent().getFirst().isActive());
-        assertEquals(from, imeiDTOPage.getContent().getFirst().getValidFrom());
-        assertEquals(to, imeiDTOPage.getContent().get(0).getValidTo());
-        assertEquals("01512", imeiDTOPage.getContent().get(0).getPhoneNumber());
-        assertEquals("456", imeiDTOPage.getContent().get(1).getImei());
-        assertFalse(imeiDTOPage.getContent().get(1).isActive());
-        assertEquals(from, imeiDTOPage.getContent().get(1).getValidFrom());
-        assertEquals(to, imeiDTOPage.getContent().get(1).getValidTo());
-        assertEquals("0171", imeiDTOPage.getContent().get(1).getPhoneNumber());
+
+
+        // Verify first ImeiDTO
+        ImeiDTO imeiDTO1 = imeiDTOPage.getContent().get(0);
+        assertEquals("123", imeiDTO1.getImei());
+        assertTrue(imeiDTO1.isActive());
+        assertEquals(from, imeiDTO1.getValidFrom());
+        assertEquals(to, imeiDTO1.getValidTo());
+        assertEquals("01512", imeiDTO1.getPhoneNumber());
+        assertEquals(1L, imeiDTO1.getOwnerId()); // Check ownerId mapping for owner1
+
+        // Verify second ImeiDTO
+        ImeiDTO imeiDTO2 = imeiDTOPage.getContent().get(1);
+        assertEquals("456", imeiDTO2.getImei());
+        assertFalse(imeiDTO2.isActive());
+        assertEquals(from, imeiDTO2.getValidFrom());
+        assertEquals(to, imeiDTO2.getValidTo());
+        assertEquals("0171", imeiDTO2.getPhoneNumber());
+        assertEquals(2L, imeiDTO2.getOwnerId()); // Check ownerId mapping for owner2
     }
 
     @Test

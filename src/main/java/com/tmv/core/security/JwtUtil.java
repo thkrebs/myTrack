@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,16 @@ public class JwtUtil {
     private final String SECRET_KEY = "x3YaK87ghFSsgSDFDFGDSeHp6D4bwGGGQwertDDDLkj2o4fkas5egqLJFa7";
 
     @Value("${jwt.token_expiry}")
-    private long token_expiry;
+    public long token_expiry;
 
-    // Extrahiere den Benutzernamen aus dem JWT
+    @PostConstruct
+    public void init() {
+        System.out.println("Aktives Profil: " + System.getProperty("spring.profiles.active"));
+        System.out.println("Token Expiry (Injected): " + token_expiry);
+
+    }
+
+        // Extrahiere den Benutzernamen aus dem JWT
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }

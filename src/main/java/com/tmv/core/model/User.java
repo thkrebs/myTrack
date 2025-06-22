@@ -44,4 +44,13 @@ public class User
             inverseJoinColumns = @JoinColumn(name = "authority_id")
     )
     private Set<Authority> authorities = new HashSet<>();
+
+    // Include IMEIs owned by this user
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Imei> imeis = new HashSet<>();
+
+    // Include journeys owned by this user
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Journey> journeys = new HashSet<>();
+
 }

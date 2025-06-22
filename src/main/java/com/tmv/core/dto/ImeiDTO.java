@@ -25,4 +25,5 @@ public class ImeiDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date validTo;
     private String phoneNumber;
+    private Long ownerId;
 }

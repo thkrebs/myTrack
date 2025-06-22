@@ -202,7 +202,6 @@ public class JourneyController extends BaseController {
 
     @PutMapping("/api/v1/journeys/{id}/end")
     @ResponseBody
-    // @TODO track should be cached finally, for that currentTrack method needs to be re-factored
     ResponseEntity<JourneyDTO> endJourney(@PathVariable Long id) {
         if (id == null) {
             return ResponseEntity.badRequest().build();

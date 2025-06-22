@@ -96,16 +96,18 @@ bootBuildImage {
 }
 
 test {
+	systemProperties = ['spring.profiles.active': 'dev'] //
+	useJUnitPlatform()
 	beforeTest { descriptor ->
 		logger.lifecycle("Running test: ${descriptor}")
 	}
 }
-
+/*
 tasks.named('test') {
 	useJUnitPlatform()
 	test.systemProperty 'spring.profiles.active', 'dev'
 }
-
+*/
 gradle.taskGraph.whenReady { taskGraph ->
 	println "Welcome to the build system. Starting build process..."
 }

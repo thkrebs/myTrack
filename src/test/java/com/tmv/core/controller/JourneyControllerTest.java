@@ -4,21 +4,23 @@ import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
+import com.tmv.core.model.User;
 import com.tmv.core.service.JourneyService;
 import com.tmv.core.service.JourneyServiceImpl;
-import org.aspectj.apache.bcel.classfile.Code;
+import com.tmv.core.util.JwtTestUtil;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -57,18 +59,38 @@ class JourneyControllerTest {
     private final String imeiStr1 = "123456789012345";
     private final String imeiStr2 = "123456789012365";
 
-    private final Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123");
-    private final Imei secondImei =  new Imei(imeiStr2, true, Date.from(Instant.now()), Date.from(Instant.now()), "456");
+    private  Imei firstImei;
+    private  Imei secondImei;
 
+    private User testUser;
+    private static String token;
+
+
+    @BeforeAll
+    static void setup() {
+        // Generate a mock JWT token
+        token = JwtTestUtil.createMockToken("testuser", "justfordemo");
+    }
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser);
+        Imei secondImei =  new Imei(imeiStr2, true, Date.from(Instant.now()), Date.from(Instant.now()), "456", testUser);
+
+        testUser.setId(1L); // Mocked user ID
+        testUser.setUsername("testuser");
+
         testJourney = new Journey();
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
         testJourney.setStartDate(getDate(0));
         testJourney.setEndDate(getDate(1));
         testJourney.setTrackedByImeis(Set.of(firstImei, secondImei));
+        testJourney.setOwner(testUser); // Set the owner user
+        // Generate a mock JWT token
+        token = JwtTestUtil.createMockToken("testuser", "justfordemo");
+
     }
 
     @Test
@@ -79,12 +101,14 @@ class JourneyControllerTest {
 
         // Testing the endpoint
         mockMvc.perform(get("/api/v1/journeys/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.description", is("Test Journey")))
                 .andExpect(jsonPath("$.startDate", is(getDate(testJourney.getStartDate()))))
                 .andExpect(jsonPath("$.endDate", is(getDate(testJourney.getEndDate()))))
+                .andExpect(jsonPath("$.ownerId", is(testJourney.getOwner().getId().intValue()))) // Validate ownerId
                 .andExpect(jsonPath("$.trackedByImeis[*].imei", containsInAnyOrder(imeiStr1, imeiStr2)));
     }
 
@@ -95,6 +119,7 @@ class JourneyControllerTest {
         Mockito.when(journeyService.getValidatedJourney(1L)).thenThrow(new ResourceNotFoundException("Journey not found with id: " + 1));
         // Testing the endpoint
         mockMvc.perform(get("/api/v1/journeys/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
@@ -104,16 +129,19 @@ class JourneyControllerTest {
         Journey newJourney = new Journey();
         newJourney.setId(2L);
         newJourney.setDescription("New Journey");
+        newJourney.setOwner(testUser);
 
         // Mocking service response
         given(journeyService.createNewJourney(any(Journey.class))).willReturn(newJourney);
 
         // Testing the endpoint
         mockMvc.perform(post("/api/v1/journeys")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"description\":\"New Journey\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(2)))
+                .andExpect(jsonPath("$.ownerId", is(testJourney.getOwner().getId().intValue()))) // Validate ownerId
                 .andExpect(jsonPath("$.description", is("New Journey")));
     }
 
@@ -128,6 +156,7 @@ class JourneyControllerTest {
 
         // Testing the endpoint
         mockMvc.perform(put("/api/v1/journeys/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Updated Journey\"}"))
                 .andExpect(status().isOk())
@@ -142,7 +171,8 @@ class JourneyControllerTest {
         Mockito.doNothing().when(journeyService).deleteJourney(1L);
 
         // Testing the endpoint
-        mockMvc.perform(delete("/api/v1/journeys/1"))
+        mockMvc.perform(delete("/api/v1/journeys/1")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))// Include Bearer token
                 .andExpect(status().isNoContent());
     }
 
@@ -153,14 +183,17 @@ class JourneyControllerTest {
                 .when(journeyService).deleteJourney(1L);
 
         // Testing the endpoint
-        mockMvc.perform(delete("/api/v1/journeys/1"))
+        mockMvc.perform(delete("/api/v1/journeys/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token.header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token)
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @Disabled("needs to be investigated. does return 500 for undefined reasons")
     void shouldReturnBadRequestOnEndWhenJourneyIdIsMissing() throws Exception {
-        mockMvc.perform(put("/api/v1/journeys//end")) // Ungültige URL
+        mockMvc.perform(put("/api/v1/journeys//end")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ) // Ungültige URL
                 .andExpect(status().isBadRequest());
     }
 
@@ -171,7 +204,8 @@ class JourneyControllerTest {
 
         Mockito.when(journeyService.endJourney(journeyId))
                 .thenThrow(new ResourceNotFoundException("Journey not found with id: 1"));
-        mockMvc.perform(put("/api/v1/journeys/1/end"))
+        mockMvc.perform(put("/api/v1/journeys/1/end")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token)
                 .andExpect(status().isNotFound());
     }
 
@@ -182,7 +216,8 @@ class JourneyControllerTest {
 
         Mockito.when(journeyService.startJourney(journeyId))
                 .thenThrow(new ResourceNotFoundException("Journey not found with id: 1"));
-        mockMvc.perform(put("/api/v1/journeys/1/start"))
+        mockMvc.perform(put("/api/v1/journeys/1/start")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token)
                 .andExpect(status().isNotFound());
     }
 
@@ -200,7 +235,8 @@ class JourneyControllerTest {
         Mockito.when(journeyService.getValidatedJourney(journeyId)).thenReturn(mockJourney);
         Mockito.when(journeyService.createGeoJsonData(mockJourney, null, mockJourney.getEndDate().atStartOfDay(),false)).thenReturn(new HashMap<>());
 
-        mockMvc.perform(put("/api/v1/journeys/{id}/end", journeyId))
+        mockMvc.perform(put("/api/v1/journeys/{id}/end", journeyId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token
                 .andExpect(status().isOk());
     }
 
@@ -210,7 +246,8 @@ class JourneyControllerTest {
 
         Mockito.when(journeyService.startJourney(invalidJourneyId)).thenThrow(new ResourceNotFoundException("Journey not found with id: 999"));
 
-        mockMvc.perform(put("/api/v1/journeys/{id}/start", invalidJourneyId))
+        mockMvc.perform(put("/api/v1/journeys/{id}/start", invalidJourneyId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Journey not found with id: 999")); // Optional, wenn Error-Response ein JSON enthält
     }
@@ -225,8 +262,11 @@ class JourneyControllerTest {
 
         Mockito.when(journeyService.startJourney(journeyId)).thenReturn(mockJourney);
 
-        mockMvc.perform(put("/api/v1/journeys/{id}/start", journeyId))
-                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/journeys/{id}/start", journeyId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L)); // Validate ownership
+
     }
 
     public static LocalDate getDate(int offset) {
