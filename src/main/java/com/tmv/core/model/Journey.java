@@ -46,7 +46,7 @@ public class Journey {
 
     // Add the relationship to User
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "userid", nullable = false)
     @JsonBackReference // Break circular reference during serialization
     private User owner; // The owner of this IMEI
 
