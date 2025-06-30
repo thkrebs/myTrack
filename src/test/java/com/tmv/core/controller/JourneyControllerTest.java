@@ -69,7 +69,7 @@ class JourneyControllerTest {
     @BeforeAll
     static void setup() {
         // Generate a mock JWT token
-        token = JwtTestUtil.createMockToken("testuser", "justfordemo");
+        token = JwtTestUtil.createMockToken("testuser", "USER");
     }
 
     @BeforeEach
@@ -249,7 +249,7 @@ class JourneyControllerTest {
         mockMvc.perform(put("/api/v1/journeys/{id}/start", invalidJourneyId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("Journey not found with id: 999")); // Optional, wenn Error-Response ein JSON enthält
+                .andExpect(content().string("Entity with ID 999 not found")); // Optional, wenn Error-Response ein JSON enthält
     }
 
     @Test

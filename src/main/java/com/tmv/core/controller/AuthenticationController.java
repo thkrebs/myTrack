@@ -2,6 +2,7 @@ package com.tmv.core.controller;
 
 import com.tmv.core.dto.AuthenticationRequestDTO;
 import com.tmv.core.dto.AuthenticationResponseDTO;
+import com.tmv.core.model.User;
 import com.tmv.core.security.JwtUtil;
 import com.tmv.core.service.CustomUserDetailsService;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +39,8 @@ public class AuthenticationController extends BaseController {
             throw new Exception("Falscher Benutzername oder Passwort", e);
         }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
-        final String jwt = jwtUtil.generateToken(userDetails);
+        final User user = userDetailsService.loadUserByUsername(request.getUsername());
+        final String jwt = jwtUtil.generateToken(user);
 
         return ResponseEntity.ok(new AuthenticationResponseDTO(jwt));
     }

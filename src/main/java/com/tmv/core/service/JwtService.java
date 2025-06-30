@@ -1,5 +1,6 @@
 package com.tmv.core.service;
 
+import com.tmv.core.model.User;
 import com.tmv.core.security.JwtUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -61,9 +62,8 @@ public class JwtService {
         return null;
     }
 
-    public String generateToken(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return jwtUtil.generateToken(userDetails);
+    public String generateToken(User user) {
+        return jwtUtil.generateToken(user);
     }
 
     public String extractUsername(String token) {

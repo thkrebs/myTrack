@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ class PositionController extends BaseController {
      * @return a ResponseEntity containing an Iterable of PositionDTO objects representing the latest positions
      */
     @GetMapping("/api/v1/imeis/{imei}/positions/last")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     ResponseEntity<Iterable<PositionDTO>> last(@PathVariable String imei) {
         Iterable<PositionDTO> positions = mapper.toPositionDTO(positionService.findLast(imei));
         return ResponseEntity.ok(positions);
@@ -69,6 +71,7 @@ class PositionController extends BaseController {
     // Aggregate root
     // tag::get-aggregate-root[]
     @GetMapping("/api/v1/imeis/{imei}/positions")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     ResponseEntity<Iterable<PositionDTO>> all(@PathVariable String imei, @RequestParam(required = false) Map<String, String> params, @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         Iterable<PositionDTO> positions = mapper.toPositionDTO(findPositions(imei, params));
         return ResponseEntity.ok(positions);
@@ -82,8 +85,9 @@ class PositionController extends BaseController {
      * @return ResponseEntity containing the details of the created position in the response body and an HTTP status of CREATED
      */
     @PostMapping("/api/v1/positions")
+    @PreAuthorize("hasRole('GOD')")
     @ResponseBody
-    ResponseEntity<PositionDTO> getNewPosition(@RequestBody Position newPosition) {
+    ResponseEntity<PositionDTO> createNewPosition(@RequestBody Position newPosition) {
         Position createdPosition =  positionService.newPosition(newPosition);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toPositionDTO(createdPosition));
     }
@@ -96,6 +100,7 @@ class PositionController extends BaseController {
      */
     // Single item
     @GetMapping("/api/v1/positions/{id}")
+    @PreAuthorize("hasRole('GOD')")
     @ResponseBody
     ResponseEntity<PositionDTO> one(@PathVariable Long id) {
         Position position = positionService.findById(id);
@@ -110,6 +115,7 @@ class PositionController extends BaseController {
      * @return a ResponseEntity containing the updated position data as a PositionDTO object
      */
     @PutMapping("/api/v1/positions/{id}")
+    @PreAuthorize("hasRole('GOD')")
     @ResponseBody
     ResponseEntity<PositionDTO> replacePosition(@RequestBody Position newPosition, @PathVariable Long id) {
         Position updatedPosition =  positionService.updatePosition(newPosition,id);
@@ -123,6 +129,7 @@ class PositionController extends BaseController {
      * @return a ResponseEntity with no content indicating the position was successfully deleted
      */
     @DeleteMapping("/api/v1/positions/{id}")
+    @PreAuthorize("hasRole('GOD')")
     ResponseEntity<Void> deletePosition(@PathVariable Long id) {
         positionService.deletePosition(id);
         return ResponseEntity.noContent().build();

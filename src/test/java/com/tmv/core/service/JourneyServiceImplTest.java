@@ -16,6 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -429,5 +432,39 @@ class JourneyServiceImplTest {
                 journeyService.determineActiveImei(null)
         );
         assertEquals("Journey or associated IMEIs cannot be null/empty.", exception.getMessage());
+    }
+
+    @Test
+    public void testCreateNewJourney_ShouldSetAuthenticatedUserAsOwner() {
+        // Mock authenticated user in SecurityContextHolder
+        User authenticatedUser = new User();
+        authenticatedUser.setId(1L);
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(authenticatedUser);
+
+        try (MockedStatic<SecurityContextHolder> mockedSecurityContext = mockStatic(SecurityContextHolder.class)) {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            mockedSecurityContext.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+
+            // Mock repository behavior
+            Journey journey = new Journey();
+            journey.setName("Test Journey");
+
+            Journey savedJourney = new Journey();
+            savedJourney.setId(1L);
+            savedJourney.setName(journey.getName());
+            savedJourney.setOwner(authenticatedUser);
+
+            when(journeyRepository.save(any(Journey.class))).thenReturn(savedJourney);
+
+            // Create a journey via service
+            Journey createdJourney = journeyService.createNewJourney(journey);
+
+            // Verify that the owner was set to the authenticated user
+            assertNotNull(createdJourney);
+            assertEquals(authenticatedUser, createdJourney.getOwner());
+        }
     }
 }

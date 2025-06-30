@@ -12,6 +12,8 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +71,15 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     public Journey createNewJourney(Journey newJourney) {
+        // Retrieve the authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        // Set the owner of the journey to the authenticated user
+        User authenticatedUser = (User) authentication.getPrincipal();
+        newJourney.setOwner(authenticatedUser);
         log.info("Creating a new journey: {}", newJourney);
         processTrackImeis(newJourney);
         return journeyRepository.save(newJourney);

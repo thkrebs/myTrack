@@ -104,3 +104,27 @@ DO $$
 
 -- Sicherstellen, dass es einen Index für die Performance gibt
 CREATE INDEX IF NOT EXISTS idx_imei_user_id ON imei (userid);
+
+-- Spalte user_id in der Tabelle "authority" hinzufügen
+ALTER TABLE authority ADD COLUMN userid BIGINT;
+
+UPDATE authority
+SET userid = (SELECT id FROM _user LIMIT 1)
+WHERE userid IS NULL;
+-- Foreign Key setzen, der auf die Benutzer-Tabelle verweist
+ALTER TABLE authority ADD CONSTRAINT fk_authority_user
+    FOREIGN KEY (userid) REFERENCES _user(id)
+        ON DELETE CASCADE;
+
+
+-- Einschränkung 'NOT NULL' auf 'user_id' setzen
+ALTER TABLE authority
+    ALTER COLUMN userid SET NOT NULL;
+
+CREATE TABLE user_roles (
+                            userid BIGINT NOT NULL,
+                            authorityid BIGINT NOT NULL,
+                            PRIMARY KEY (userid, authorityid),
+                            FOREIGN KEY (userid) REFERENCES _user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (authorityid) REFERENCES authority(id) ON DELETE CASCADE
+);

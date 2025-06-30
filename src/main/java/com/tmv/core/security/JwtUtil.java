@@ -1,11 +1,13 @@
 package com.tmv.core.security;
 
+import com.tmv.core.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -55,9 +57,15 @@ public class JwtUtil {
     }
 
     // Generiere ein Token für den Benutzer
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
+        // Benutzer-ID und Roles in die Claims einfügen
+        claims.put("userId", user.getId()); // Benutzer-ID
+        claims.put("roles", user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority) // Authorities extrahieren
+                .toList());
+
+        return createToken(claims, user.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
