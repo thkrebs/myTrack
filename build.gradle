@@ -9,7 +9,7 @@ plugins {
 
 
 group = 'com.tmv'
-version = '0.6-SNAPSHOT'
+version = '0.7-SNAPSHOT'
 
 
 jib {
@@ -73,6 +73,10 @@ dependencies {
 	implementation 'org.apache.httpcomponents.core5:httpcore5:5.2'
 	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2'
 	implementation 'com.google.code.gson:gson:2.12.1'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Zur Unterstützung von JSON-Daten
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 	implementation "org.mapstruct:mapstruct:1.5.5.Final"
 	compileOnly 'org.projectlombok:lombok:1.18.36'

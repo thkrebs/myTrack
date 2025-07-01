@@ -225,7 +225,7 @@ class JourneyServiceImplTest {
         String parkingSpotDescription = "Description A";
 
         Imei imei = new Imei("12345", true, null, null, null, testUser);
-        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now());
+        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(),100l);
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
@@ -261,7 +261,7 @@ class JourneyServiceImplTest {
         String parkingSpotDescription = "Description A";
 
         Imei imei = new Imei("12345", true, null, null, null, testUser);
-        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now());
+        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(), 100);
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
