@@ -21,6 +21,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -102,7 +103,7 @@ public class JourneyController extends BaseController {
 
 
         /**
-         * Creates a new journey resource based on the provided journey data.
+         * Creates a new journey resource based on the provided journey data. Can be called by any authenticated user which then owns the journey.
          *
          * @param newJourney the data of the journey to be created, encapsulated in CreateJourneyDTO
          * @return a ResponseEntity containing the created journey encapsulated in JourneyDTO and an HTTP status of CREATED
@@ -123,6 +124,7 @@ public class JourneyController extends BaseController {
      */
     // Single item
     @GetMapping("/api/v1/journeys/{id}")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<JourneyDTO> one(@PathVariable Long id) {
         Journey journeyEntity = journeyService.getValidatedJourney(id);
@@ -137,6 +139,7 @@ public class JourneyController extends BaseController {
      * @return A ResponseEntity containing the updated journey details as a JourneyDTO object.
      */
     @PutMapping("/api/v1/journeys/{id}")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<JourneyDTO> updateJourney(@RequestBody CreateJourneyDTO newJourney, @PathVariable Long id) {
         Journey updatedJourney = journeyService.updateJourney(id, mapper.toJourneyEntity(newJourney));
@@ -152,6 +155,7 @@ public class JourneyController extends BaseController {
      * @return a ResponseEntity containing the created ParkSpotDTO and the HTTP status code
      */
     @PostMapping("/api/v1/journeys/{journeyId}/overnight-parking")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     public ResponseEntity<ParkSpotDTO> createOvernightParkingForJourney(
             @PathVariable Long journeyId,
             @RequestParam(required = true) String name,
@@ -164,6 +168,7 @@ public class JourneyController extends BaseController {
     }
 
     @GetMapping("/api/v1/journeys/{journeyId}/nearbyParkspots")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
     public ResponseEntity<List<ParkSpotDTO>> getNearbyParkingForJourney(@PathVariable Long journeyId, @RequestParam(required = false) Long distance) {
 
@@ -183,6 +188,7 @@ public class JourneyController extends BaseController {
      * @return a ResponseEntity containing the updated OvernightParkingDTO
      */
     @PutMapping("/journeys/{journeyId}/overnight-parking")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     public ResponseEntity<OvernightParkingDTO> updateOvernightParkingForJourney(
             @PathVariable Long journeyId,
             @RequestBody OvernightParkingDTO updatedParkingDTO) {
@@ -191,6 +197,7 @@ public class JourneyController extends BaseController {
     }
 
     @PutMapping("/api/v1/journeys/{id}/start")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<JourneyDTO> startJourney(@PathVariable Long id) {
         if (id == null) {
@@ -201,8 +208,8 @@ public class JourneyController extends BaseController {
     }
 
     @PutMapping("/api/v1/journeys/{id}/end")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
-    // @TODO track should be cached finally, for that currentTrack method needs to be re-factored
     ResponseEntity<JourneyDTO> endJourney(@PathVariable Long id) {
         if (id == null) {
             return ResponseEntity.badRequest().build();
@@ -232,6 +239,7 @@ public class JourneyController extends BaseController {
      * @return a ResponseEntity with no content to indicate successful deletion
      */
     @DeleteMapping("/api/v1/journeys/{id}")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<Void> deleteJourney(@PathVariable Long id) {
         journeyService.deleteJourney(id);
@@ -244,6 +252,7 @@ public class JourneyController extends BaseController {
      * @return A ResponseEntity containing the HTTP status and a message.
      */
     @PostMapping("/api/v1/journeys/clear-cache")
+    @PreAuthorize("hasRole('GOD') or hasRole('ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> clearJourneyCache() {;
 

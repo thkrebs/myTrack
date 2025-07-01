@@ -3,16 +3,12 @@ package com.tmv.core.service;
 import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceNotFoundException;
-import com.tmv.core.model.Imei;
-import com.tmv.core.model.Journey;
-import com.tmv.core.model.ParkSpot;
-import com.tmv.core.model.Position;
+import com.tmv.core.model.*;
 import com.tmv.core.persistence.*;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.locationtech.jts.geom.LineString;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,14 +16,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -71,8 +71,14 @@ class JourneyServiceImplTest {
     @Captor
     private ArgumentCaptor<Journey> journeyCaptor;
 
+    private User testUser;
+
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L); // Mocked user ID
+        testUser.setUsername("testuser");
+
         journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService);
         // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
         ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
@@ -94,7 +100,7 @@ class JourneyServiceImplTest {
         newJourneyData.setDescription("New description");
         newJourneyData.setStartDate(dtStart);
         newJourneyData.setEndDate(dtEnd);
-        newJourneyData.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null)));
+        newJourneyData.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser)));
 
         Journey updatedJourney = new Journey();
         updatedJourney.setId(journeyId);
@@ -117,6 +123,7 @@ class JourneyServiceImplTest {
         assertEquals(jCapt.getDescription(),newJourneyData.getDescription());
         assertEquals(jCapt.getStartDate(),newJourneyData.getStartDate());
         assertEquals(jCapt.getEndDate(),newJourneyData.getEndDate());
+        assertEquals(jCapt.getOwner(), newJourneyData.getOwner());
         List<String> capturedImeis = jCapt.getTrackedByImeis().stream().map(Imei::getImei).toList();
         assertEquals(1, capturedImeis.size());
         assertTrue(capturedImeis.contains("12345"));
@@ -133,7 +140,7 @@ class JourneyServiceImplTest {
         newJourneyData.setDescription("New Journey");
         newJourneyData.setStartDate(dtStart);
         newJourneyData.setEndDate(dtEnd);
-        newJourneyData.setTrackedByImeis(Set.of(new Imei("67890", true, null, null, null)));
+        newJourneyData.setTrackedByImeis(Set.of(new Imei("67890", true, null, null, null, testUser)));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.empty());
         Mockito.when(journeyRepository.save(newJourneyData)).thenReturn(newJourneyData);
@@ -153,6 +160,7 @@ class JourneyServiceImplTest {
         assertEquals(jCapt.getDescription(),newJourneyData.getDescription());
         assertEquals(jCapt.getStartDate(),newJourneyData.getStartDate());
         assertEquals(jCapt.getEndDate(),newJourneyData.getEndDate());
+        assertEquals(jCapt.getOwner(), newJourneyData.getOwner());
         List<String> capturedImeis = jCapt.getTrackedByImeis().stream().map(Imei::getImei).toList();
         assertEquals(1, capturedImeis.size());
         assertTrue(capturedImeis.contains("67890"));
@@ -163,7 +171,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null)));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser)));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
         Mockito.when(journeyRepository.save(journey)).thenReturn(journey);
@@ -174,6 +182,7 @@ class JourneyServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(LocalDate.now(), result.getStartDate());
+        assertEquals(result.getOwner(),journey.getOwner());
         verify(journeyRepository, times(1)).findById(journeyId);
         verify(journeyRepository, times(1)).save(journey);
     }
@@ -197,7 +206,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null)));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser)));
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
 
         // Act & Assert
@@ -215,8 +224,8 @@ class JourneyServiceImplTest {
         String parkingSpotName = "Spot A";
         String parkingSpotDescription = "Description A";
 
-        Imei imei = new Imei("12345", true, null, null, null);
-        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(),100);
+        Imei imei = new Imei("12345", true, null, null, null, testUser);
+        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now());
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
@@ -251,8 +260,8 @@ class JourneyServiceImplTest {
         String parkingSpotName = "Spot A";
         String parkingSpotDescription = "Description A";
 
-        Imei imei = new Imei("12345", true, null, null, null);
-        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(),100);
+        Imei imei = new Imei("12345", true, null, null, null, testUser);
+        Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now());
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
@@ -287,7 +296,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null)));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser)));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
 
@@ -305,7 +314,7 @@ class JourneyServiceImplTest {
     void createNewParkSpotForJourney_noLastPosition_throwsException() {
         // Arrange
         Long journeyId = 1L;
-        Imei imei = new Imei("12345", true, null, null, null);
+        Imei imei = new Imei("12345", true, null, null, null, testUser);
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
@@ -367,8 +376,8 @@ class JourneyServiceImplTest {
         // Setup
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", false,null,null,null),
-                new Imei("67890", true, null, null,null)
+                new Imei("12345", false,null,null,null, testUser),
+                new Imei("67890", true, null, null,null, testUser)
         ));
 
         // Act
@@ -383,8 +392,8 @@ class JourneyServiceImplTest {
         // Setup
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", true,null,null,null),
-                new Imei("67890", true, null, null, null)
+                new Imei("12345", true,null,null,null, testUser),
+                new Imei("67890", true, null, null, null, testUser)
         ));
 
         // Act
@@ -398,8 +407,8 @@ class JourneyServiceImplTest {
     void testDetermineActiveImei_noActive() {
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", false,null,null,null),
-                new Imei("67890", false, null, null, null)
+                new Imei("12345", false,null,null,null, testUser),
+                new Imei("67890", false, null, null, null, testUser)
         ));
 
         String activeImei = journeyService.determineActiveImei(journey);
@@ -425,5 +434,37 @@ class JourneyServiceImplTest {
         assertEquals("Journey or associated IMEIs cannot be null/empty.", exception.getMessage());
     }
 
+    @Test
+    public void testCreateNewJourney_ShouldSetAuthenticatedUserAsOwner() {
+        // Mock authenticated user in SecurityContextHolder
+        User authenticatedUser = new User();
+        authenticatedUser.setId(1L);
 
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(authenticatedUser);
+
+        try (MockedStatic<SecurityContextHolder> mockedSecurityContext = mockStatic(SecurityContextHolder.class)) {
+            SecurityContext securityContext = mock(SecurityContext.class);
+            mockedSecurityContext.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+
+            // Mock repository behavior
+            Journey journey = new Journey();
+            journey.setName("Test Journey");
+
+            Journey savedJourney = new Journey();
+            savedJourney.setId(1L);
+            savedJourney.setName(journey.getName());
+            savedJourney.setOwner(authenticatedUser);
+
+            when(journeyRepository.save(any(Journey.class))).thenReturn(savedJourney);
+
+            // Create a journey via service
+            Journey createdJourney = journeyService.createNewJourney(journey);
+
+            // Verify that the owner was set to the authenticated user
+            assertNotNull(createdJourney);
+            assertEquals(authenticatedUser, createdJourney.getOwner());
+        }
+    }
 }

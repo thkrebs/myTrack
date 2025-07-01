@@ -3,12 +3,15 @@
    import com.tmv.core.exception.ConstraintViolationException;
    import com.tmv.core.exception.ResourceNotFoundException;
    import com.tmv.core.model.Imei;
+   import com.tmv.core.model.User;
    import com.tmv.core.persistence.ImeiRepository;
    import lombok.extern.slf4j.Slf4j;
    import org.springframework.beans.factory.annotation.Autowired;
    import org.springframework.data.domain.Page;
    import org.springframework.data.domain.PageRequest;
    import org.springframework.data.domain.Pageable;
+   import org.springframework.security.core.Authentication;
+   import org.springframework.security.core.context.SecurityContextHolder;
    import org.springframework.stereotype.Service;
 
    import java.util.Optional;
@@ -31,6 +34,16 @@
        }
 
        public Imei createNewImei(Imei newImei) {
+           // Fetch the authenticated user
+           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+           if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+               throw new IllegalStateException("No authenticated user found");
+           }
+           User authenticatedUser = (User) authentication.getPrincipal();
+
+           // Assign the authenticated user as the owner of the IMEI
+           newImei.setOwner(authenticatedUser);
+
            log.info("Creating a new Imei: {}", newImei);
            return imeiRepository.save(newImei);
        }

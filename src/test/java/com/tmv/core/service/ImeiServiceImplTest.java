@@ -5,7 +5,9 @@ import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
+import com.tmv.core.model.User;
 import com.tmv.core.persistence.ImeiRepository;
+import com.tmv.core.util.TestUserFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.Instant;
 import java.util.Date;
@@ -38,9 +43,13 @@ class ImeiServiceImplTest {
     @InjectMocks
     private ImeiServiceImpl imeiService;
 
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L); // Mocked user ID
+        testUser.setUsername("testuser");
         imeiService = new ImeiServiceImpl(imeiRepository);
     }
 
@@ -92,6 +101,9 @@ class ImeiServiceImplTest {
 
     @Test
     void testCreateNewImei() {
+        User currentUser = TestUserFactory.createTestUserWithAuthorities("testUser","email", 1L, "ROLE_USER"); // Assuming User(id=1, username="testUser")
+        setAuthenticatedUser(currentUser); // Set the authenticated user in SecurityContext
+
         // Arrange
         Imei newImei = new Imei();
         when(imeiRepository.save(newImei)).thenReturn(newImei);
@@ -216,7 +228,7 @@ class ImeiServiceImplTest {
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
         ;
-        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123");
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser);
         firstImei.setJourneys(Set.of(testJourney));
 
         // Arrange
@@ -229,4 +241,17 @@ class ImeiServiceImplTest {
         verify(imeiRepository, times(1)).existsById(id);
         verify(imeiRepository, times(1)).findById(id);
     }
+
+
+    private void setAuthenticatedUser(User user) {
+        // Mock the authentication and set it in the SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(user);
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+    }
+
 }

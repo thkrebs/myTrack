@@ -1,5 +1,6 @@
 package com.tmv.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -42,5 +43,12 @@ public class Journey {
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL)
     private Set<OvernightParking> overnightParkings = new HashSet<>();
+
+    // Add the relationship to User
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userid", nullable = false)
+    @JsonBackReference // Break circular reference during serialization
+    private User owner; // The owner of this IMEI
+
 
 }

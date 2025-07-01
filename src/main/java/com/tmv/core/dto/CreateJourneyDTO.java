@@ -29,4 +29,5 @@ public class CreateJourneyDTO {
     private LocalDate endDate;
 
     private List<Long> trackedByImeis = new ArrayList<>();
+    private Long ownerId;
 }

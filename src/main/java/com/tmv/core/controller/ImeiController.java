@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -62,6 +63,7 @@ public class ImeiController extends BaseController {
      */
     // Single item
     @GetMapping("/api/v1/imeis/{id}")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<ImeiDTO> one(@PathVariable Long id) {
         Imei imei = imeiService.getImeiById(id)
@@ -81,6 +83,7 @@ public class ImeiController extends BaseController {
      * @return a ResponseEntity containing a list of ImeiDTO objects for the requested page
      */
     @GetMapping(path = "/api/v1/imeis", params = { "page", "size" })
+    @PreAuthorize("hasRole('GOD')")
     ResponseEntity<List<ImeiDTO>> allPaginated(@RequestParam("page") int page,
                                     @RequestParam("size") int size, UriComponentsBuilder uriBuilder,
                                     HttpServletResponse response) {
@@ -104,6 +107,7 @@ public class ImeiController extends BaseController {
      * @return A ResponseEntity containing the updated IMEI information as a DTO.
      */
     @PutMapping("/api/v1/imeis/{id}")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<ImeiDTO> updateJourney(@RequestBody ImeiDTO newImei, @PathVariable Long id) {
         Imei updatedImei = imeiService.updateImei(id,mapper.toImeiEntity(newImei));
@@ -117,6 +121,7 @@ public class ImeiController extends BaseController {
      * @return a ResponseEntity with no content indicating the deletion was successful
      */
     @DeleteMapping("/api/v1/imeis/{id}")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<Void> deleteJourney(@PathVariable Long id) {
         imeiService.deleteImei(id);

@@ -18,19 +18,23 @@ import java.util.stream.Collectors;
         componentModel = "spring"
 )
 public interface MapStructMapper {
+    @Mapping(target = "ownerId", source = "owner.id") // Map owner's ID to ownerId
     ImeiDTO toImeiDTO(Imei imei);
 
     ImeiSlimDTO toImeiSlimDTO(Imei imei);
 
     @Mapping(target = "journeys", ignore = true)
+    @Mapping(target = "owner", ignore = true) // Ignore owner when mapping from the ImeiDTO to Entity
     Imei toImeiEntity(ImeiDTO imeiDTO);
 
     //@Mapping(target = "parkSpots", source = "overnightParkings")
     //@Mapping(target = "parkSpots", ignore = true) // will be mapped manually
     @Mapping(target = "parkSpots",
             expression = "java(overnightParkingsToDto(journey.getOvernightParkings()))")
+    @Mapping(target = "ownerId", source = "owner.id") // Map owner's ID to ownerId
     JourneyDTO toJourneyDTO(com.tmv.core.model.Journey journey);
 
+    @Mapping(target = "owner", ignore = true) // Ignore owner when mapping from a DTO to an Entity
     @Mapping(target = "overnightParkings", ignore = true)
     @Mapping(target = "id", ignore = true)
     Journey toJourneyEntity(CreateJourneyDTO journeyDTO);

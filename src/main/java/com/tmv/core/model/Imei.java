@@ -32,11 +32,19 @@
        @ManyToMany(mappedBy = "trackedByImeis", fetch = FetchType.LAZY)
        private Set<Journey> journeys;
 
-       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber ) {
+       // Add the relationship to User
+       @ManyToOne(fetch = FetchType.LAZY)
+       @JoinColumn(name = "userid", nullable = false)
+       @JsonBackReference // Break circular reference during serialization
+       private User owner; // The owner of this IMEI
+
+
+       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber, User owner) {
            this.imei = imei;
            this.active = active;
            this.validFrom = validFrom;
            this.validTo = validTo;
            this.phoneNumber = phoneNumber;
+           this.owner = owner;
        }
    }

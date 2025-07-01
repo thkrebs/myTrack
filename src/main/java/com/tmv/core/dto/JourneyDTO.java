@@ -31,5 +31,6 @@ public class JourneyDTO {
 
     private List<ImeiSlimDTO> trackedByImeis = new ArrayList<>();
     private List<OvernightParkingFullDTO> parkSpots = new ArrayList<>();
+    private Long ownerId;
 
 }

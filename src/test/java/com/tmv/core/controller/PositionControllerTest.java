@@ -5,11 +5,10 @@ import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.dto.MapStructMapper;
 import com.tmv.core.dto.MapStructMapperImpl;
 import com.tmv.core.model.Position;
-import com.tmv.core.service.ImeiService;
-import com.tmv.core.service.ImeiServiceImpl;
-import com.tmv.core.service.PositionService;
-import com.tmv.core.service.PositionServiceImpl;
+import com.tmv.core.service.*;
+import com.tmv.core.util.JwtTestUtil;
 import com.tmv.core.util.MultiFormatDateParser;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -40,6 +40,9 @@ public class PositionControllerTest {
     @MockBean(PositionServiceImpl.class)
     PositionService positionService;
 
+    @MockBean(ImeiSecurity.class)
+    ImeiSecurity imeiSecurity;
+
     @Autowired
     MockMvc mockMvc;
 
@@ -50,7 +53,14 @@ public class PositionControllerTest {
     final LocalDateTime dt = LocalDateTime.now();
 
     final Position position = new Position(8f,50f, (short) 1, (short) 2, (byte) 3, (short) 4,imei,dt, (long)100);
+    private static String token;
 
+
+    @BeforeAll
+    static void setup() {
+        // Generate a mock JWT token
+        token = JwtTestUtil.createMockToken("testuser", "ROLE_GOD");
+    }
 
     @Test
     void contextLoads()  {
@@ -72,7 +82,10 @@ public class PositionControllerTest {
     void shouldReturnLastPositionNotEmpty() throws Exception {
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$.*.lat").value(50.0)) // Validate specific JSON property (example field 'latitude')
                 .andExpect(jsonPath("$.*.lng").value(8.0))
@@ -91,7 +104,10 @@ public class PositionControllerTest {
 
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of());
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isEmpty());
          // Validate ;
@@ -101,7 +117,10 @@ public class PositionControllerTest {
     void shouldReturnAllPositions() throws Exception {
         Mockito.when(positionService.findAll(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions")).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -112,7 +131,10 @@ public class PositionControllerTest {
         String dateTo = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei,null, MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?to=" + dateTo)).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?to=" + dateTo)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -123,7 +145,11 @@ public class PositionControllerTest {
         String dateFrom = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), null)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom)).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true); // Mock ownership check - IMPORTANT
+
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
          // Validate ;
@@ -135,7 +161,10 @@ public class PositionControllerTest {
         String dateTo = "05-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
-        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)).andDo(print()).andExpect(status().isOk())
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
+        this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
+                ).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json")) // Check that the response is JSON
                 .andExpect(jsonPath("$").isNotEmpty());
         // Validate ;
