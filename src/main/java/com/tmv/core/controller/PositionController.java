@@ -54,7 +54,7 @@ class PositionController extends BaseController {
      * @return a ResponseEntity containing an Iterable of PositionDTO objects representing the latest positions
      */
     @GetMapping("/api/v1/imeis/{imei}/positions/last")
-    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#imei)")
     ResponseEntity<Iterable<PositionDTO>> last(@PathVariable String imei) {
         Iterable<PositionDTO> positions = mapper.toPositionDTO(positionService.findLast(imei));
         return ResponseEntity.ok(positions);
@@ -71,7 +71,7 @@ class PositionController extends BaseController {
     // Aggregate root
     // tag::get-aggregate-root[]
     @GetMapping("/api/v1/imeis/{imei}/positions")
-    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#imei)")
     ResponseEntity<Iterable<PositionDTO>> all(@PathVariable String imei, @RequestParam(required = false) Map<String, String> params, @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         Iterable<PositionDTO> positions = mapper.toPositionDTO(findPositions(imei, params));
         return ResponseEntity.ok(positions);

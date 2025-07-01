@@ -5,10 +5,7 @@ import com.tmv.core.config.CoreConfiguration;
 import com.tmv.core.dto.MapStructMapper;
 import com.tmv.core.dto.MapStructMapperImpl;
 import com.tmv.core.model.Position;
-import com.tmv.core.service.ImeiService;
-import com.tmv.core.service.ImeiServiceImpl;
-import com.tmv.core.service.PositionService;
-import com.tmv.core.service.PositionServiceImpl;
+import com.tmv.core.service.*;
 import com.tmv.core.util.JwtTestUtil;
 import com.tmv.core.util.MultiFormatDateParser;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +40,9 @@ public class PositionControllerTest {
     @MockBean(PositionServiceImpl.class)
     PositionService positionService;
 
+    @MockBean(ImeiSecurity.class)
+    ImeiSecurity imeiSecurity;
+
     @Autowired
     MockMvc mockMvc;
 
@@ -59,7 +59,7 @@ public class PositionControllerTest {
     @BeforeAll
     static void setup() {
         // Generate a mock JWT token
-        token = JwtTestUtil.createMockToken("testuser", "justfordemo");
+        token = JwtTestUtil.createMockToken("testuser", "ROLE_GOD");
     }
 
     @Test
@@ -82,6 +82,7 @@ public class PositionControllerTest {
     void shouldReturnLastPositionNotEmpty() throws Exception {
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())
@@ -102,6 +103,7 @@ public class PositionControllerTest {
 
         Mockito.when(positionService.findLast(imei)).thenReturn(List.of());
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions/last")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())
@@ -114,6 +116,7 @@ public class PositionControllerTest {
     void shouldReturnAllPositions() throws Exception {
         Mockito.when(positionService.findAll(imei)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())
@@ -127,6 +130,7 @@ public class PositionControllerTest {
         String dateTo = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei,null, MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?to=" + dateTo)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())
@@ -140,6 +144,8 @@ public class PositionControllerTest {
         String dateFrom = "04-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), null)).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true); // Mock ownership check - IMPORTANT
+
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())
@@ -154,6 +160,7 @@ public class PositionControllerTest {
         String dateTo = "05-08-2015 10:11";
         Mockito.when(positionService.findBetween(imei, MultiFormatDateParser.parseDate(dateFrom), MultiFormatDateParser.parseDate(dateTo))).thenReturn(List.of(position));
         Mockito.when(imeiService.isActive(imei)).thenReturn(true);
+        Mockito.when(imeiSecurity.isOwner(imei)).thenReturn(true);
         this.mockMvc.perform(get("/api/v1/imeis/" + imei + "/positions?from=" + dateFrom + "&to=" + dateTo)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Include Bearer token
                 ).andDo(print()).andExpect(status().isOk())

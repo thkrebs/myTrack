@@ -43,7 +43,7 @@ public abstract class AbstractOwnershipSecurity<T> {
      * 
      * @return The user ID or null if no user is authenticated.
      */
-    private Long getCurrentUserId() {
+    protected Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return (auth != null && auth.getPrincipal() instanceof User)
                 ? ((User) auth.getPrincipal()).getId()
