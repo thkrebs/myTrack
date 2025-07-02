@@ -1,9 +1,7 @@
 package com.tmv.core.config;
 
-import com.tmv.core.security.JwtAuthenticationEntryPoint;
-import com.tmv.core.security.JwtAuthenticationFilter;
-import com.tmv.core.security.JwtAuthenticationProvider;
-import com.tmv.core.security.JwtRequestResolver;
+import com.tmv.core.security.*;
+import com.tmv.core.service.ApiTokenService;
 import com.tmv.core.service.CustomUserDetailsService;
 import com.tmv.core.service.JwtService;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +34,7 @@ public class SecurityConfig {
     private final JwtService jwtService; // Ein Service zur JWT-Validierung oder Benutzerextraktion
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final ApiTokenAuthenticationFilter apiTokenAuthenticationFilter;
 
 
     public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider,
@@ -44,7 +43,8 @@ public class SecurityConfig {
                           JwtRequestResolver jwtRequestResolver,
                           JwtService jwtService,
                           CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-                          CustomAccessDeniedHandler customAccessDeniedHandler) {
+                          CustomAccessDeniedHandler customAccessDeniedHandler,
+                          ApiTokenAuthenticationFilter apiTokenAuthenticationFilter) {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -52,6 +52,7 @@ public class SecurityConfig {
         this.jwtService = jwtService;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.apiTokenAuthenticationFilter = apiTokenAuthenticationFilter;
     }
 
     @Bean
@@ -64,8 +65,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/authenticate/**").permitAll()
+                        .requestMatchers("/api/v1/journeys/{journey}/track").hasAuthority("ROLE_API") // Require API token for this endpoint
                         .anyRequest().authenticated() // Alle anderen Anfragen erfordern Authentifizierung
                 )
+                // Add the API Token Authentication Filter before the main authorization filter
+                .addFilterBefore(apiTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthenticationFilter(jwtRequestResolver, jwtService), UsernamePasswordAuthenticationFilter.class)
                 .authenticationProvider(jwtAuthenticationProvider);
 

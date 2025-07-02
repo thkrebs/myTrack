@@ -1,9 +1,6 @@
 package com.tmv.core.dto;
 
-import com.tmv.core.model.Imei;
-import com.tmv.core.model.Journey;
-import com.tmv.core.model.OvernightParking;
-import com.tmv.core.model.ParkSpot;
+import com.tmv.core.model.*;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -75,6 +72,12 @@ public interface MapStructMapper {
     @Mapping(target = "overnightDate", source = "overnightDate")
     @Mapping(target = "wpPostId", source = "parkSpot.wpPostId")
     OvernightParkingFullDTO toOvernightParkingFullDTO(OvernightParking overnightParking);
+
+
+    @Mapping(target = "userId", source = "user.id") // Map user's ID to userId in the DTO
+    ApiTokenDTO toApiTokenDTO(ApiToken apiToken);
+
+    List<ApiTokenDTO> toApiTokenDTO(List<ApiToken> apiTokens);
 
 
     default List<ParkSpotDTO> extractParkSpotsFromOvernightParkings(List<OvernightParking> overnightParkings) {
