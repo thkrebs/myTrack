@@ -9,6 +9,7 @@ import com.tmv.core.model.ApiToken;
 import com.tmv.core.model.User;
 import com.tmv.core.persistence.ApiTokenRepository;
 import com.tmv.core.persistence.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,14 +22,12 @@ import java.util.stream.Collectors;
 public class ApiTokenService {
 
     private final ApiTokenRepository apiTokenRepository; // Your token repository
-    private final UserRepository userRepository; // User repository for validations
     private final MapStructMapper mapper;
 
 
     // Dependency Injection
-    public ApiTokenService(ApiTokenRepository apiTokenRepository, UserRepository userRepository, MapStructMapper mapper) {
+    public ApiTokenService(ApiTokenRepository apiTokenRepository, @Qualifier("mapStructMapper") MapStructMapper mapper) {
         this.apiTokenRepository = apiTokenRepository;
-        this.userRepository = userRepository;
         this.mapper = mapper;
 
     }

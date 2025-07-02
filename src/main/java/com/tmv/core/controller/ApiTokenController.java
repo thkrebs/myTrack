@@ -21,7 +21,7 @@ public class ApiTokenController {
 
     // 1. Create a new API token
     @PostMapping
-    public ResponseEntity<ApiTokenDTO> createApiToken(@RequestBody ApiTokenRequest request, Authentication authentication) {
+    public ResponseEntity<ApiTokenDTO> createApiToken(@RequestBody ApiTokenDTO request, Authentication authentication) {
         User currentUser = (User) authentication.getPrincipal();
         ApiTokenDTO apiTokenDTO = apiTokenService.createTokenForUser(currentUser, request.getDescription());
         return ResponseEntity.ok(apiTokenDTO);

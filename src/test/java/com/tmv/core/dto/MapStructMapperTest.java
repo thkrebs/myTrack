@@ -314,4 +314,53 @@ class MapStructMapperTest {
         assertTrue(imeis.stream().anyMatch(imei -> imei.getId() == 100L));
         assertTrue(imeis.stream().anyMatch(imei -> imei.getId() == 200L));
     }
+
+    @Test
+    void testApiTokenToApiTokenDTO() {
+        // Arrange: Create an ApiToken entity with sample data
+        User user = new User();
+        user.setId(1L);
+
+        ApiToken apiToken = new ApiToken();
+        apiToken.setId(100L);
+        apiToken.setToken("sample-token");
+        apiToken.setDescription("Test API Token");
+        apiToken.setCreatedAt(LocalDateTime.of(2023, 11, 1, 12, 0));
+        apiToken.setExpiresAt(LocalDateTime.of(2023, 12, 1, 12, 0));
+        apiToken.setUser(user);
+
+        // Act: Map entity to DTO
+        ApiTokenDTO apiTokenDTO = mapper.toApiTokenDTO(apiToken);
+
+        // Assert: Verify mappings
+        assertEquals(apiToken.getId(), apiTokenDTO.getId());
+        assertEquals(apiToken.getToken(), apiTokenDTO.getToken());
+        assertEquals(apiToken.getDescription(), apiTokenDTO.getDescription());
+        assertEquals(apiToken.getCreatedAt(), apiTokenDTO.getCreatedAt());
+        assertEquals(apiToken.getExpiresAt(), apiTokenDTO.getExpiresAt());
+        assertEquals(apiToken.getUser().getId(), apiTokenDTO.getUserId());
+    }
+
+    @Test
+    void testApiTokenToApiTokenDTONullUser() {
+        // Arrange: Create an ApiToken entity with a null user
+        ApiToken apiToken = new ApiToken();
+        apiToken.setId(101L);
+        apiToken.setToken("sample-token-2");
+        apiToken.setDescription("Test API Token with null user");
+        apiToken.setCreatedAt(LocalDateTime.of(2023, 11, 2, 12, 0));
+        apiToken.setExpiresAt(LocalDateTime.of(2023, 12, 2, 12, 0));
+        apiToken.setUser(null); // Null user
+
+        // Act: Map entity to DTO
+        ApiTokenDTO apiTokenDTO = mapper.toApiTokenDTO(apiToken);
+
+        // Assert: Ensure the userId is null
+        assertEquals(apiToken.getId(), apiTokenDTO.getId());
+        assertEquals(apiToken.getToken(), apiTokenDTO.getToken());
+        assertEquals(apiToken.getDescription(), apiTokenDTO.getDescription());
+        assertEquals(apiToken.getCreatedAt(), apiTokenDTO.getCreatedAt());
+        assertEquals(apiToken.getExpiresAt(), apiTokenDTO.getExpiresAt());
+        assertNull(apiTokenDTO.getUserId());
+    }
 }
