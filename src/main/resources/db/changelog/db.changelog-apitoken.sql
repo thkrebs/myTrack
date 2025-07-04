@@ -4,7 +4,7 @@ CREATE TABLE public.apitoken
     createdat TIMESTAMP(6) NOT NULL, -- Creation timestamp
     expiresat TIMESTAMP(6), -- Optional expiration timestamp
     token VARCHAR(255) NOT NULL CONSTRAINT uk7dvok5igpwdypbi42651a2vci UNIQUE, -- Unique constraint on token
-    description VARCHAR(80)
+    description VARCHAR(80),
     user_id BIGINT NOT NULL CONSTRAINT fkhbqydc1s1ntu82388xubojveu REFERENCES public._user -- Foreign key relationship with the user
 );
 
