@@ -5,6 +5,7 @@ import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
 import com.tmv.core.model.User;
+import com.tmv.core.service.JourneySecurity;
 import com.tmv.core.service.JourneyService;
 import com.tmv.core.service.JourneyServiceImpl;
 import com.tmv.core.util.JwtTestUtil;
@@ -54,6 +55,10 @@ class JourneyControllerTest {
     @MockBean(JourneyServiceImpl.class)
     private JourneyService journeyService;
 
+    @MockBean
+    private JourneySecurity journeySecurity;
+
+
     private Journey testJourney;
 
     private final String imeiStr1 = "123456789012345";
@@ -69,7 +74,7 @@ class JourneyControllerTest {
     @BeforeAll
     static void setup() {
         // Generate a mock JWT token
-        token = JwtTestUtil.createMockToken("testuser", "USER");
+        token = JwtTestUtil.createMockToken("testuser", "ROLE_USER");
     }
 
     @BeforeEach
@@ -89,7 +94,8 @@ class JourneyControllerTest {
         testJourney.setTrackedByImeis(Set.of(firstImei, secondImei));
         testJourney.setOwner(testUser); // Set the owner user
         // Generate a mock JWT token
-        token = JwtTestUtil.createMockToken("testuser", "justfordemo");
+        token = JwtTestUtil.createMockToken("testuser", "ROLE_USER");
+        given(journeySecurity.isOwner(any(Long.class))).willReturn(true);
 
     }
 
@@ -249,7 +255,7 @@ class JourneyControllerTest {
         mockMvc.perform(put("/api/v1/journeys/{id}/start", invalidJourneyId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)) // Include Bearer token
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("Entity with ID 999 not found")); // Optional, wenn Error-Response ein JSON enthält
+                .andExpect(content().string("Journey not found with id: 999")); // Optional, wenn Error-Response ein JSON enthält
     }
 
     @Test

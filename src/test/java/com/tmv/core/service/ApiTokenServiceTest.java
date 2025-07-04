@@ -111,13 +111,14 @@ class ApiTokenServiceTest {
         user.setId(1L);
 
         ApiToken apiToken = new ApiToken();
+        apiToken.setId(1L);
         apiToken.setToken("token-to-revoke");
         apiToken.setUser(user);
 
-        when(apiTokenRepository.findByToken("token-to-revoke")).thenReturn(Optional.of(apiToken));
+        when(apiTokenRepository.findById(1L)).thenReturn(Optional.of(apiToken));
 
         // Act
-        apiTokenService.revokeTokenForUser("token-to-revoke", user);
+        apiTokenService.revokeTokenForUser(1L, user);
 
         // Assert
         verify(apiTokenRepository, times(1)).delete(apiToken);
@@ -133,13 +134,14 @@ class ApiTokenServiceTest {
         otherUser.setId(2L);
 
         ApiToken apiToken = new ApiToken();
+        apiToken.setId(1L);
         apiToken.setToken("token-to-revoke");
         apiToken.setUser(otherUser);
 
         when(apiTokenRepository.findByToken("token-to-revoke")).thenReturn(Optional.of(apiToken));
 
         // Act & Assert
-        assertThrows(UnauthorizedOperationException.class, () -> apiTokenService.revokeTokenForUser("token-to-revoke", user));
+        assertThrows(ResourceNotFoundException.class, () -> apiTokenService.revokeTokenForUser(1L, user));
         verify(apiTokenRepository, never()).delete(apiToken);
     }
 
