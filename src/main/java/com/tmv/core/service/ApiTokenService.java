@@ -60,8 +60,8 @@ public class ApiTokenService {
 
 
     // Revoke a token
-    public void revokeTokenForUser(String token, User user) {
-        ApiToken apiToken = apiTokenRepository.findByToken(token)
+    public void revokeTokenForUser(Long tokenId, User user) {
+        ApiToken apiToken = apiTokenRepository.findById(tokenId)
                 .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
 
         if (!apiToken.getUser().getId().equals(user.getId())) {

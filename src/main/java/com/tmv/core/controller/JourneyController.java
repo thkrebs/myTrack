@@ -79,6 +79,7 @@ public class JourneyController extends BaseController {
      * @return a map representing a GeoJSON object with features including park spots and the route
      */
     @GetMapping(value = "/api/v1/journeys/{journey}/track", produces = "application/json")
+    @PreAuthorize("hasRole('GOD') or hasAuthority('ROLE_API') or @journeySecurity.isOwner(#journey)")
     Map<String, Object> currentTrack(@PathVariable Long journey, @RequestParam(required = false) Map<String, String> params) {
         Journey journeyEntity = journeyService.getValidatedJourney(journey);
 
@@ -155,7 +156,7 @@ public class JourneyController extends BaseController {
      * @return a ResponseEntity containing the created ParkSpotDTO and the HTTP status code
      */
     @PostMapping("/api/v1/journeys/{journeyId}/overnight-parking")
-    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
     public ResponseEntity<ParkSpotDTO> createOvernightParkingForJourney(
             @PathVariable Long journeyId,
             @RequestParam(required = true) String name,
@@ -168,7 +169,7 @@ public class JourneyController extends BaseController {
     }
 
     @GetMapping("/api/v1/journeys/{journeyId}/nearbyParkspots")
-    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
     @ResponseBody
     public ResponseEntity<List<ParkSpotDTO>> getNearbyParkingForJourney(@PathVariable Long journeyId, @RequestParam(required = false) Long distance) {
 
@@ -188,7 +189,7 @@ public class JourneyController extends BaseController {
      * @return a ResponseEntity containing the updated OvernightParkingDTO
      */
     @PutMapping("/journeys/{journeyId}/overnight-parking")
-    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
     public ResponseEntity<OvernightParkingDTO> updateOvernightParkingForJourney(
             @PathVariable Long journeyId,
             @RequestBody OvernightParkingDTO updatedParkingDTO) {

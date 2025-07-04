@@ -65,7 +65,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/authenticate/**").permitAll()
-                        .requestMatchers("/api/v1/journeys/{journey}/track").hasAuthority("ROLE_API") // Require API token for this endpoint
+                //        .requestMatchers("/api/v1/journeys/{journey}/track").hasAuthority("ROLE_API") // Require API token for this endpoint
                         .anyRequest().authenticated() // Alle anderen Anfragen erfordern Authentifizierung
                 )
                 // Add the API Token Authentication Filter before the main authorization filter

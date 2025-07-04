@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface ApiTokenRepository  extends JpaRepository<ApiToken, Long> {
+    Optional<ApiToken> findById(Long tokenId);
     Optional<ApiToken> findByToken(String token);
     void deleteByToken(String token);
     List<ApiToken> findByUser(User user);
