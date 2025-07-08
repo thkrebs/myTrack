@@ -11,10 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -43,5 +40,28 @@ public class AuthenticationController extends BaseController {
         final String jwt = jwtUtil.generateToken(user);
 
         return ResponseEntity.ok(new AuthenticationResponseDTO(jwt));
+    }
+
+
+    @GetMapping("/api/v1/validate-token")
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
+        try {
+            // Entfernen der möglichen "Bearer " Prefix aus dem Token
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // Überprüfung der Gültigkeit des Tokens
+            boolean notExpired = jwtUtil.isTokenExpired(token);
+
+            if (notExpired) {
+                return ResponseEntity.ok("Token is valid.");
+            } else {
+                return ResponseEntity.status(401).body("Token expired.");
+            }
+        } catch (Exception e) {
+            log.error("Token validation failed: ", e);
+            return ResponseEntity.status(400).body("Bad Request: Invalid token format.");
+        }
     }
 }
