@@ -2,10 +2,12 @@ package com.tmv.core.security;
 
 import com.tmv.core.model.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@Slf4j
 @Service
 public class JwtUtil {
 
@@ -24,10 +27,14 @@ public class JwtUtil {
     @Value("${jwt.token_expiry}")
     public long token_expiry;
 
+    @Value("${jwt.refresh_token_expiry}")
+    public long refresh_token_expiry;
+
     @PostConstruct
     public void init() {
-        System.out.println("Aktives Profil: " + System.getProperty("spring.profiles.active"));
-        System.out.println("Token Expiry (Injected): " + token_expiry);
+        log.info("Aktives Profil: " + System.getProperty("spring.profiles.active"));
+        log.info("Token Expiry (Injected) (min): " + token_expiry);
+        log.info("Refresh Token Expiry (Injected) (min): " + refresh_token_expiry);
 
     }
 
@@ -73,14 +80,33 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * token_expiry)) // Token läuft in 10 Stunden ab
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * token_expiry)) // Token läuft in 10 Stunden ab
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
                 .compact();
     }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * refresh_token_expiry))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .compact();
+    }
+
 
     // Validieren des Tokens
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public boolean validateRefreshToken(String token) {
+        try {
+            Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false; // Token ist ungültig
+        }
     }
 }

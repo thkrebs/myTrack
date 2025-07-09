@@ -72,32 +72,18 @@ public class ImeiController extends BaseController {
     }
 
     /**
-     * Retrieves a paginated list of Imei resources based on the provided page and size parameters.
-     * Adds pagination metadata such as total pages and total elements to the HTTP response headers.
-     * Throws a ResourceNotFoundException if the specified page exceeds the total available pages.
+     * Retrieves a list of all Imei resources for the authenticated user.
+     * Converts the Imei entities to their corresponding ImeiDTO representations.
      *
-     * @param page the page number to retrieve, starting from 0
-     * @param size the number of elements per page
-     * @param uriBuilder a UriComponentsBuilder instance for building URI components
-     * @param response the HttpServletResponse to which pagination metadata headers are added
-     * @return a ResponseEntity containing a list of ImeiDTO objects for the requested page
+     * @return a ResponseEntity containing a list of ImeiDTO objects
      */
-    @GetMapping(path = "/api/v1/imeis", params = { "page", "size" })
-    @PreAuthorize("hasRole('GOD')")
-    ResponseEntity<List<ImeiDTO>> allPaginated(@RequestParam("page") int page,
-                                    @RequestParam("size") int size, UriComponentsBuilder uriBuilder,
-                                    HttpServletResponse response) {
-        Page<ImeiDTO> resultPage = mapper.pagedImeiToPagedImeiDto(imeiService.allPaginated(page, size));
-        if (page > resultPage.getTotalPages()) {
-            throw new ResourceNotFoundException("No more Imeis");
-        }
-        // Add pagination metadata to headers
-        response.addHeader("X-Total-Pages", String.valueOf(resultPage.getTotalPages()));
-        response.addHeader("X-Total-Elements", String.valueOf(resultPage.getTotalElements()));
-
-        // Return ResponseEntity with the paginated content
-        return ResponseEntity.ok(resultPage.getContent());
+    @GetMapping(path = "/api/v1/imeis")
+    ResponseEntity<List<ImeiDTO>> all() {
+        List<ImeiDTO> imeiList = mapper.toImeiDTOList(imeiService.allForUser());
+        // Return ResponseEntity with the content
+        return ResponseEntity.ok(imeiList);
     }
+
 
     /**
      * Updates the journey associated with a specific IMEI.

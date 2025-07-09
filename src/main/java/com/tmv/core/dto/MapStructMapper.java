@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public interface MapStructMapper {
     @Mapping(target = "ownerId", source = "owner.id") // Map owner's ID to ownerId
     ImeiDTO toImeiDTO(Imei imei);
+    List<ImeiDTO> toImeiDTOList(List<Imei> imeiList);
 
     ImeiSlimDTO toImeiSlimDTO(Imei imei);
 

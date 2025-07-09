@@ -14,6 +14,7 @@
    import org.springframework.security.core.context.SecurityContextHolder;
    import org.springframework.stereotype.Service;
 
+   import java.util.List;
    import java.util.Optional;
 
    @Slf4j
@@ -55,6 +56,16 @@
        public Page<Imei>allPaginated(int page, int size) {
            Pageable pageable = PageRequest.of(page, size);
            return imeiRepository.findAll(pageable);
+       }
+
+       public List<Imei> allForUser() {
+           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+           if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+               throw new IllegalStateException("No authenticated user found");
+           }
+           // Set the owner of the journey to the authenticated user
+           User authenticatedUser = (User) authentication.getPrincipal();
+           return imeiRepository.findByUser(authenticatedUser);
        }
 
        public Imei updateImei(Long id, Imei newImei) {

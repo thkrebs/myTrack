@@ -6,25 +6,28 @@ import com.tmv.core.model.User;
 import com.tmv.core.security.JwtUtil;
 import com.tmv.core.service.CustomUserDetailsService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 public class AuthenticationController extends BaseController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
 
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
+    public AuthenticationController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+            this.authenticationManager = authenticationManager;
+            this.jwtUtil = jwtUtil;
+            this.userDetailsService = userDetailsService;
+    }
 
     @PostMapping("/api/v1/authenticate")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDTO request)  throws Exception {
@@ -38,30 +41,31 @@ public class AuthenticationController extends BaseController {
 
         final User user = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwt = jwtUtil.generateToken(user);
+        final String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        return ResponseEntity.ok(new AuthenticationResponseDTO(jwt));
+
+        return ResponseEntity.ok(new AuthenticationResponseDTO(jwt, refreshToken));
     }
 
-
-    @GetMapping("/api/v1/validate-token")
-    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
+    @PostMapping("/api/v1/refresh-token")
+    public ResponseEntity<?> refreshAuthenticationToken(@RequestBody String refreshToken) {
         try {
-            // Entfernen der möglichen "Bearer " Prefix aus dem Token
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
+            // Refresh Token validieren
+            if (!jwtUtil.validateRefreshToken(refreshToken)) {
+                return ResponseEntity.status(401).body("Invalid refresh token");
             }
 
-            // Überprüfung der Gültigkeit des Tokens
-            boolean notExpired = jwtUtil.isTokenExpired(token);
+            // Benutzer aus dem Token extrahieren
+            String username = jwtUtil.extractUsername(refreshToken);
+            final User user = userDetailsService.loadUserByUsername(username);
 
-            if (notExpired) {
-                return ResponseEntity.ok("Token is valid.");
-            } else {
-                return ResponseEntity.status(401).body("Token expired.");
-            }
+            // Neues Access Token generieren
+            final String newAccessToken = jwtUtil.generateToken(user);
+
+            // Rückgabe des neuen Tokens
+            return ResponseEntity.ok(new AuthenticationResponseDTO(newAccessToken, refreshToken));
         } catch (Exception e) {
-            log.error("Token validation failed: ", e);
-            return ResponseEntity.status(400).body("Bad Request: Invalid token format.");
+            return ResponseEntity.status(400).body("Could not refresh token");
         }
     }
 }

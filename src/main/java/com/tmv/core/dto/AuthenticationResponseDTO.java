@@ -1,18 +1,13 @@
 package com.tmv.core.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@AllArgsConstructor
+@Getter
+@Setter
 public class AuthenticationResponseDTO {
     private String jwt;
-
-    public AuthenticationResponseDTO(String jwt) {
-        this.jwt = jwt;
-    }
-
-    public String getJwt() {
-        return jwt;
-    }
-
-    public void setJwt(String jwt) {
-        this.jwt = jwt;
-    }
-
+    private String refreshToken; // Refresh Token
 }
