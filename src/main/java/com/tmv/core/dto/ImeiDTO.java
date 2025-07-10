@@ -26,4 +26,5 @@ public class ImeiDTO {
     private Date validTo;
     private String phoneNumber;
     private Long ownerId;
+    private String description;
 }

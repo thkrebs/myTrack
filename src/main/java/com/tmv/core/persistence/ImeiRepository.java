@@ -8,11 +8,10 @@
    import org.springframework.stereotype.Repository;
 
    import java.util.List;
-   import java.util.Optional;
 
    @Repository
    public interface ImeiRepository extends JpaRepository<Imei, Long> {
        Imei findByImei(String imei);
        Page<Imei> findAll(Pageable pageable);
-       List<Imei> findByUser(User user);
+       List<Imei> findByOwner(User user);
    }

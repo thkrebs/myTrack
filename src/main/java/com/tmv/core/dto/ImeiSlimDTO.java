@@ -12,4 +12,6 @@ public class ImeiSlimDTO {
     private Long id;
     @NotNull
     private String imei;
+    private String description;
+
 }

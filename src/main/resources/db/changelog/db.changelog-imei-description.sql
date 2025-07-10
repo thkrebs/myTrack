@@ -1,0 +1,2 @@
+ALTER TABLE imei
+    ADD COLUMN description VARCHAR(80) DEFAULT '' NOT NULL;

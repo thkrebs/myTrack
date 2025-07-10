@@ -28,6 +28,7 @@
        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
        private Date validTo;
        private String phoneNumber;
+       private String description;
 
        @ManyToMany(mappedBy = "trackedByImeis", fetch = FetchType.LAZY)
        private Set<Journey> journeys;
@@ -39,12 +40,13 @@
        private User owner; // The owner of this IMEI
 
 
-       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber, User owner) {
+       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber, User owner, String description) {
            this.imei = imei;
            this.active = active;
            this.validFrom = validFrom;
            this.validTo = validTo;
            this.phoneNumber = phoneNumber;
            this.owner = owner;
+           this.description = description;
        }
    }

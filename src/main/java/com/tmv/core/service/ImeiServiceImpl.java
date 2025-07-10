@@ -65,7 +65,7 @@
            }
            // Set the owner of the journey to the authenticated user
            User authenticatedUser = (User) authentication.getPrincipal();
-           return imeiRepository.findByUser(authenticatedUser);
+           return imeiRepository.findByOwner(authenticatedUser);
        }
 
        public Imei updateImei(Long id, Imei newImei) {
