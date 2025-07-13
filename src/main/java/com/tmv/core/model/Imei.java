@@ -29,6 +29,7 @@
        private Date validTo;
        private String phoneNumber;
        private String description;
+       private String deviceType;
 
        @ManyToMany(mappedBy = "trackedByImeis", fetch = FetchType.LAZY)
        private Set<Journey> journeys;
@@ -40,7 +41,7 @@
        private User owner; // The owner of this IMEI
 
 
-       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber, User owner, String description) {
+       public Imei(String imei, boolean active, Date validFrom, Date validTo, String phoneNumber, User owner, String description, String deviceType) {
            this.imei = imei;
            this.active = active;
            this.validFrom = validFrom;
@@ -48,5 +49,6 @@
            this.phoneNumber = phoneNumber;
            this.owner = owner;
            this.description = description;
+           this.deviceType = deviceType;
        }
    }

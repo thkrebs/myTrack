@@ -80,8 +80,8 @@ class JourneyControllerTest {
     @BeforeEach
     void setUp() {
         testUser = new User();
-        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "");
-        Imei secondImei =  new Imei(imeiStr2, true, Date.from(Instant.now()), Date.from(Instant.now()), "456", testUser, "");
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "", "");
+        Imei secondImei =  new Imei(imeiStr2, true, Date.from(Instant.now()), Date.from(Instant.now()), "456", testUser, "", "");
 
         testUser.setId(1L); // Mocked user ID
         testUser.setUsername("testuser");

@@ -27,4 +27,5 @@ public class ImeiDTO {
     private String phoneNumber;
     private Long ownerId;
     private String description;
+    private String deviceType;
 }

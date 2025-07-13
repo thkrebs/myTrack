@@ -13,5 +13,6 @@ public class ImeiSlimDTO {
     @NotNull
     private String imei;
     private String description;
+    private String deviceType;
 
 }

@@ -227,8 +227,8 @@ class ImeiServiceImplTest {
         Journey testJourney = new Journey();
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
-        ;
-        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "");
+
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "", "");
         firstImei.setJourneys(Set.of(testJourney));
 
         // Arrange

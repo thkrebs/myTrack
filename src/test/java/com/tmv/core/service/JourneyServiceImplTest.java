@@ -100,7 +100,7 @@ class JourneyServiceImplTest {
         newJourneyData.setDescription("New description");
         newJourneyData.setStartDate(dtStart);
         newJourneyData.setEndDate(dtEnd);
-        newJourneyData.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser, "")));
+        newJourneyData.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser, "", "")));
 
         Journey updatedJourney = new Journey();
         updatedJourney.setId(journeyId);
@@ -140,7 +140,7 @@ class JourneyServiceImplTest {
         newJourneyData.setDescription("New Journey");
         newJourneyData.setStartDate(dtStart);
         newJourneyData.setEndDate(dtEnd);
-        newJourneyData.setTrackedByImeis(Set.of(new Imei("67890", true, null, null, null, testUser, "")));
+        newJourneyData.setTrackedByImeis(Set.of(new Imei("67890", true, null, null, null, testUser, "", "")));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.empty());
         Mockito.when(journeyRepository.save(newJourneyData)).thenReturn(newJourneyData);
@@ -171,7 +171,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser, "")));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", true, null, null, null, testUser, "", "")));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
         Mockito.when(journeyRepository.save(journey)).thenReturn(journey);
@@ -206,7 +206,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser, "")));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser, "", "")));
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
 
         // Act & Assert
@@ -224,7 +224,7 @@ class JourneyServiceImplTest {
         String parkingSpotName = "Spot A";
         String parkingSpotDescription = "Description A";
 
-        Imei imei = new Imei("12345", true, null, null, null, testUser, "");
+        Imei imei = new Imei("12345", true, null, null, null, testUser, "", "");
         Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(),100l);
         Journey journey = new Journey();
         journey.setId(journeyId);
@@ -260,7 +260,7 @@ class JourneyServiceImplTest {
         String parkingSpotName = "Spot A";
         String parkingSpotDescription = "Description A";
 
-        Imei imei = new Imei("12345", true, null, null, null, testUser, "");
+        Imei imei = new Imei("12345", true, null, null, null, testUser, "", "");
         Position position = new Position(1.0f, 2.0f, (short) 3, (short) 4, (byte) 5, (short) 6, imei.getImei(), LocalDateTime.now(), 100);
         Journey journey = new Journey();
         journey.setId(journeyId);
@@ -296,7 +296,7 @@ class JourneyServiceImplTest {
         // Arrange
         Long journeyId = 1L;
         Journey journey = new Journey();
-        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser, "")));
+        journey.setTrackedByImeis(Set.of(new Imei("12345", false, null, null, null, testUser, "", "")));
 
         Mockito.when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
 
@@ -314,7 +314,7 @@ class JourneyServiceImplTest {
     void createNewParkSpotForJourney_noLastPosition_throwsException() {
         // Arrange
         Long journeyId = 1L;
-        Imei imei = new Imei("12345", true, null, null, null, testUser, "");
+        Imei imei = new Imei("12345", true, null, null, null, testUser, "", "");
         Journey journey = new Journey();
         journey.setId(journeyId);
         journey.setTrackedByImeis(Set.of(imei));
@@ -376,8 +376,8 @@ class JourneyServiceImplTest {
         // Setup
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", false,null,null,null, testUser, ""),
-                new Imei("67890", true, null, null,null, testUser, "")
+                new Imei("12345", false,null,null,null, testUser, "", ""),
+                new Imei("67890", true, null, null,null, testUser, "", "")
         ));
 
         // Act
@@ -392,8 +392,8 @@ class JourneyServiceImplTest {
         // Setup
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", true,null,null,null, testUser, ""),
-                new Imei("67890", true, null, null, null, testUser, "")
+                new Imei("12345", true,null,null,null, testUser, "", ""),
+                new Imei("67890", true, null, null, null, testUser, "", "")
         ));
 
         // Act
@@ -407,8 +407,8 @@ class JourneyServiceImplTest {
     void testDetermineActiveImei_noActive() {
         Journey journey = new Journey();
         journey.setTrackedByImeis(Set.of(
-                new Imei("12345", false,null,null,null, testUser, ""),
-                new Imei("67890", false, null, null, null, testUser, "")
+                new Imei("12345", false,null,null,null, testUser, "", ""),
+                new Imei("67890", false, null, null, null, testUser, "", "")
         ));
 
         String activeImei = journeyService.determineActiveImei(journey);

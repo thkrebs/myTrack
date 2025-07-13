@@ -273,8 +273,8 @@ class MapStructMapperTest {
         owner2.setUsername("owner2");
 
         List<Imei> imeiList = List.of(
-                new Imei("123", true, from, to, "01512",owner1, ""),
-                new Imei("456", false, from, to, "0171", owner2, "")
+                new Imei("123", true, from, to, "01512",owner1, "", ""),
+                new Imei("456", false, from, to, "0171", owner2, "", "")
         );
         Page<Imei> imeiPage = new PageImpl<>(imeiList);
 

@@ -1,2 +1,6 @@
 ALTER TABLE imei
     ADD COLUMN description VARCHAR(80) DEFAULT '' NOT NULL;
+
+
+ALTER TABLE imei
+    ADD COLUMN devicetype VARCHAR(60) DEFAULT '' NOT NULL;
