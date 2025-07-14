@@ -14,5 +14,6 @@ public class ImeiSlimDTO {
     private String imei;
     private String description;
     private String deviceType;
+    private boolean shownOnMap;
 
 }

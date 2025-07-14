@@ -124,7 +124,7 @@ class ImeiServiceImplTest {
         when(imeiRepository.findById(id)).thenReturn(Optional.of(imei));
 
         // Act
-        Optional<Imei> foundImei = imeiService.getImeiById(id);
+        Optional<Imei> foundImei = imeiService.findById(id);
 
         // Assert
         assertTrue(foundImei.isPresent());
@@ -139,7 +139,7 @@ class ImeiServiceImplTest {
         when(imeiRepository.findById(id)).thenReturn(Optional.empty());
 
         // Act
-        Optional<Imei> foundImei = imeiService.getImeiById(id);
+        Optional<Imei> foundImei = imeiService.findById(id);
 
         // Assert
         assertFalse(foundImei.isPresent());
@@ -228,7 +228,7 @@ class ImeiServiceImplTest {
         testJourney.setId(1L);
         testJourney.setDescription("Test Journey");
 
-        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "", "");
+        Imei firstImei =  new Imei(imeiStr1, true, Date.from(Instant.now()), Date.from(Instant.now()), "123", testUser, "", "", true);
         firstImei.setJourneys(Set.of(testJourney));
 
         // Arrange

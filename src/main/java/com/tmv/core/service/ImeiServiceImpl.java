@@ -5,6 +5,7 @@
    import com.tmv.core.model.Imei;
    import com.tmv.core.model.User;
    import com.tmv.core.persistence.ImeiRepository;
+   import jakarta.transaction.Transactional;
    import lombok.extern.slf4j.Slf4j;
    import org.springframework.beans.factory.annotation.Autowired;
    import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@
 
    @Slf4j
    @Service
+   @Transactional
    public class ImeiServiceImpl implements ImeiService {
     
        private final ImeiRepository imeiRepository;
@@ -32,6 +34,11 @@
        public boolean isActive(String imei) {
            var imeiRecord = imeiRepository.findByImei(imei);
            return imeiRecord != null && imeiRecord.isActive();
+       }
+
+       @Override
+       public Optional<Imei> findById(Long id) {
+           return imeiRepository.findById(id);
        }
 
        public Imei createNewImei(Imei newImei) {
@@ -49,10 +56,15 @@
            return imeiRepository.save(newImei);
        }
 
-       public Optional<Imei> getImeiById(Long id) {
-           return imeiRepository.findById(id);
-       }
+       @Override
+       public Imei save(Imei imei) {
+           // Optional: Validierung hinzufügen, falls notwendig
+           if (imei == null) {
+               throw new IllegalArgumentException("IMEI entity must not be null.");
+           }
 
+           return imeiRepository.save(imei); // Speichern der Entität im Repository
+       }
        public Page<Imei>allPaginated(int page, int size) {
            Pageable pageable = PageRequest.of(page, size);
            return imeiRepository.findAll(pageable);

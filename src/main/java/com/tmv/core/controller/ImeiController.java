@@ -2,21 +2,21 @@ package com.tmv.core.controller;
 
 
 import com.tmv.core.dto.ImeiDTO;
-import org.springframework.beans.factory.annotation.Qualifier;
 import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.service.ImeiServiceImpl;
-import com.tmv.core.exception.ResourceNotFoundException;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ImeiController handles CRUD operations for the Imei entity.
@@ -66,7 +66,7 @@ public class ImeiController extends BaseController {
     @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
     @ResponseBody
     ResponseEntity<ImeiDTO> one(@PathVariable Long id) {
-        Imei imei = imeiService.getImeiById(id)
+        Imei imei = imeiService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Imei not found with id: " + id));
         return ResponseEntity.ok(mapper.toImeiDTO(imei));
     }
@@ -97,6 +97,32 @@ public class ImeiController extends BaseController {
     @ResponseBody
     ResponseEntity<ImeiDTO> updateJourney(@RequestBody ImeiDTO newImei, @PathVariable Long id) {
         Imei updatedImei = imeiService.updateImei(id,mapper.toImeiEntity(newImei));
+        return ResponseEntity.ok(mapper.toImeiDTO(updatedImei));
+    }
+
+    @PatchMapping("/api/v1/imeis/{id}")
+    @PreAuthorize("hasRole('GOD') or @imeiSecurity.isOwner(#id)")
+    @ResponseBody
+    public ResponseEntity<ImeiDTO> patchImei(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates) {
+        // Schritt 1: Suche nach der bestehenden Entität
+        Imei existingImei = imeiService.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("IMEI not found with id: " + id));
+
+        // Schritt 2: Felder aktualisieren, die in den Updates enthalten sind
+        updates.forEach((key, value) -> {
+            Field field = ReflectionUtils.findField(Imei.class, key);
+            if (field != null) {
+                field.setAccessible(true);
+                ReflectionUtils.setField(field, existingImei, value);
+            }
+        });
+
+        // Schritt 3: Speichern der aktualisierten Entität
+        Imei updatedImei = imeiService.save(existingImei);
+
+        // Schritt 4: Rückgabe als DTO
         return ResponseEntity.ok(mapper.toImeiDTO(updatedImei));
     }
 

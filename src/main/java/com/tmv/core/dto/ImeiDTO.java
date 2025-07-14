@@ -28,4 +28,5 @@ public class ImeiDTO {
     private Long ownerId;
     private String description;
     private String deviceType;
+    private boolean shownOnMap;
 }
