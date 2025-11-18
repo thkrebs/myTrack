@@ -11,6 +11,7 @@ This project appears to be a Java application built with Gradle. It includes a `
 - It uses the Spring framework
 - Database used is POSTGIS
 - All documentation shall be in english language
+- All rest endpoints have the prefix /api/v1/
 
 ## Project Structure
 

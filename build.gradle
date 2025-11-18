@@ -116,4 +116,3 @@ tasks.matching { it.name.startsWith('bootRun') }.configureEach {
 			args = ["--spring.profiles.active=${project.properties['profile'] ?: 'prod'}"]
 		}
 }
-
