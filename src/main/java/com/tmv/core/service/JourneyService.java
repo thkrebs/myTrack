@@ -41,4 +41,5 @@ public interface JourneyService {
 
     Map<String, Object> createGeoJsonData(Journey journey, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealTrack);
 
+    Optional<Journey> getActiveJourney(String username);
     }

@@ -43,8 +43,9 @@ public class JourneyServiceImpl implements JourneyService {
     private final ImeiRepository imeiRepository;
     private final WordPressPostService wordPressPostService;
     private final PositionService positionService;
+    private final UserRepository userRepository;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService, UserRepository userRepository) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
@@ -54,6 +55,7 @@ public class JourneyServiceImpl implements JourneyService {
         this.imeiRepository = imeiRepository;
         this.wordPressPostService = wordPressPostService;
         this.positionService = positionService;
+        this.userRepository = userRepository;
     }
 
     public LineString trackForJourneyBetween(Journey journeyEntity, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition) {
@@ -229,6 +231,14 @@ public class JourneyServiceImpl implements JourneyService {
         geoJson.put("features", createFeatures(track, parkSpots, currentPosition, concealTrack));
 
         return geoJson;
+    }
+
+    @Override
+    public Optional<Journey> getActiveJourney(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        List<Journey> activeJourneys = journeyRepository.findActiveJourneysByOwner(user.getId());
+        return activeJourneys.stream().findFirst();
     }
 
 

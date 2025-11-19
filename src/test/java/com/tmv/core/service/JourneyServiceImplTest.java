@@ -48,6 +48,9 @@ class JourneyServiceImplTest {
     private ParkSpotRepository parkSpotRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     OvernightParkingRepository overnightParkingRepository;
 
     @Mock
@@ -79,7 +82,7 @@ class JourneyServiceImplTest {
         testUser.setId(1L); // Mocked user ID
         testUser.setUsername("testuser");
 
-        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService);
+        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService, userRepository);
         // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
         ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
     }

@@ -267,6 +267,15 @@ public class JourneyController extends BaseController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/api/v1/journeys/user/{username}/active")
+    @PreAuthorize("hasRole('GOD') or #username == authentication.name")
+    public ResponseEntity<JourneyDTO> getActiveJourneyForUser(@PathVariable String username) {
+        return journeyService.getActiveJourney(username)
+                .map(mapper::toJourneyDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
+
 
     // if params has no startDate use journey startDate
     // if params is specified it is used if within journey date boundaries
