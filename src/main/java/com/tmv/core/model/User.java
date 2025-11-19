@@ -40,6 +40,9 @@ public class User implements UserDetails
     @Column(nullable=false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private Long features;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",

@@ -10,6 +10,13 @@ public class UserFeatureService {
     private static final int PACKAGES_SHIFT = 48;
     private static final long PACKAGES_MASK = 0xFFFFL;
 
+    // for documentation purposes
+    public static final int BASE_PACKAGE = 0;
+    public static final int PLUS_PACKAGE = 1;
+    public static final int PREMIUM_PACKAGE = 2;
+
+    public static final int DOMAIN_CAMPING = 0;
+
     /**
      * Decodes a 64-bit feature flag into a DTO.
      * - The domain is stored in the 2 least significant bytes (bits 0-15).

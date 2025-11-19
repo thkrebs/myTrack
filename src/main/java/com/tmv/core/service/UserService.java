@@ -12,14 +12,16 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserFeatureService userFeatureService;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, UserFeatureService userFeatureService) {
         this.userRepository = userRepository;
+        this.userFeatureService = userFeatureService;
     }
 
     public Optional<UserFeaturesDTO> getUserFeatures(String username) {
         Optional<User> user = userRepository.findByUsername(username);
-        return user.map(u -> new UserFeaturesDTO(u.getFeatures()));
+        return user.map(u -> userFeatureService.decodeFeatures(u.getFeatures()));
     }
 }

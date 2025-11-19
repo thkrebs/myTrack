@@ -7,7 +7,7 @@ public class PasswordEncryption {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
         // Roher Passworttext, der verschlüsselt werden soll
-        String rawPassword = "justfordemo"; // Ersetze durch dein echtes Passwort
+        String rawPassword = "bonsais!2025"; // Ersetze durch dein echtes Passwort
 
         // Das verschlüsselte Passwort
         String encodedPassword = passwordEncoder.encode(rawPassword);

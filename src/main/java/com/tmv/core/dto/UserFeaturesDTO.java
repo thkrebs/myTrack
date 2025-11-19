@@ -10,5 +10,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserFeaturesDTO {
-    private Long features;
+    private int domain;
+    private int packages;
 }

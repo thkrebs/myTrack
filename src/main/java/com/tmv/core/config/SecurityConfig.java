@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -48,7 +49,7 @@ public class SecurityConfig {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.jwtRequestResolver = new JwtRequestResolver();
+        this.jwtRequestResolver = jwtRequestResolver;
         this.jwtService = jwtService;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
@@ -58,6 +59,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable) // CSRF deaktivieren
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(customAuthenticationEntryPoint) // Authentifizierungs-Fehler behandeln
                         .accessDeniedHandler(customAccessDeniedHandler) // For 403
@@ -66,13 +68,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/authenticate/**").permitAll()
                         .requestMatchers("/api/v1/refresh-token").permitAll()
-                        //        .requestMatchers("/api/v1/journeys/{journey}/track").hasAuthority("ROLE_API") // Require API token for this endpoint
-                        .anyRequest().authenticated() // Alle anderen Anfragen erfordern Authentifizierung
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().authenticated()
                 )
-                // Add the API Token Authentication Filter before the main authorization filter
-                .addFilterBefore(apiTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new JwtAuthenticationFilter(jwtRequestResolver, jwtService), UsernamePasswordAuthenticationFilter.class)
-                .authenticationProvider(jwtAuthenticationProvider);
+                // Run JWT filter before API token filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(apiTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -84,7 +85,10 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class).build();
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.authenticationProvider(authenticationProvider());
+        authenticationManagerBuilder.authenticationProvider(jwtAuthenticationProvider);
+        return authenticationManagerBuilder.build();
     }
 
     @Bean
