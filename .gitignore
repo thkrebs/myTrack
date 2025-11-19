@@ -37,6 +37,7 @@ out/
 .vscode/
 
 application.log
+/*.log
 keystore.p12
 gradle-wrapper.*
 gradlew.*
