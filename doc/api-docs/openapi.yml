@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: myTrack API
+  description: |-
+    This document provides a detailed overview of the myTrack REST API.
+    The API is used to manage IMEI-related resources, journeys, users, and other assets.
+  version: 0.7.2-SNAPSHOT
+servers:
+  - url: https://thkrebs.ddns.net:8443/api/v1
+    description: Production Server
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+tags:
+  - name: User
+    description: Endpoints for managing user features and settings.
+  - name: Journey
+    description: Endpoints for creating, managing, and retrieving journey data.
+  - name: Authentication
+    description: Endpoints for user authentication and token management.
+  - name: Imei
+    description: Endpoints for managing IMEI devices.
+  - name: Position
+    description: Endpoints for retrieving position data.
+  - name: API Token
+    description: Endpoints for managing API tokens.
+
+paths:
+  /user/{username}/features:
+    get:
+      tags:
+        - User
+      summary: Get User Features
+      description: Retrieves the feature flags for a specific user. The feature field is a 64-bit integer that encodes the user's domain and subscribed packages.
+      operationId: getUserFeatures
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose features are to be retrieved.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeaturesDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      security:
+        - bearerAuth: []
+
+  /journeys/user/{username}/active:
+    get:
+      tags:
+        - Journey
+      summary: Get Active Journey for User
+      description: Retrieves the currently active journey for a specific user. A journey is considered active if it has a start date and no end date.
+      operationId: getActiveJourneyForUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose active journey is to be retrieved.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyDTO'
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      security:
+        - bearerAuth: []
+
+  /journeys:
+    post:
+      tags:
+        - Journey
+      summary: Create a new journey
+      operationId: createJourney
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJourneyDTO'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyDTO'
+      security:
+        - bearerAuth: []
+
+  /journeys/{id}:
+    get:
+      tags:
+        - Journey
+      summary: Get a specific journey by ID
+      operationId: getJourneyById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyDTO'
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - Journey
+      summary: Update an existing journey
+      operationId: updateJourney
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJourneyDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyDTO'
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - Journey
+      summary: Delete a journey
+      operationId: deleteJourney
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: No Content
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserFeaturesDTO:
+      type: object
+      properties:
+        domain:
+          type: integer
+          format: int32
+        packages:
+          type: integer
+          format: int32
+    JourneyDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        ownerId:
+          type: integer
+          format: int64
+    CreateJourneyDTO:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date

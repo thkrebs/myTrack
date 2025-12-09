@@ -21,5 +21,7 @@ This project appears to be a Java application built with Gradle. It includes a `
 * **`Dockerfile`**: Defines the Docker image for the application.
 * **`docker-compose-arm64.yml`**: Docker Compose file for ARM64 architecture.
 * **`docs/`**: Likely contains project documentation.
+* **`docs/api-docs/openapi.yml contains a documentation of REST Endpoints serving the purpose to generate front-end code for an app
+* **`docs/API.md contains a human readable documentation of the API
 
 This `agent.md` file is a starting point. Feel free to expand it with more details about the project's architecture, setup, and deployment.
