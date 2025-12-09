@@ -9,7 +9,7 @@ plugins {
 
 
 group = 'com.tmv'
-version = '0.7.3-SNAPSHOT'
+version = '0.7.5-SNAPSHOT'
 
 
 jib {
