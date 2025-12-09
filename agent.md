@@ -13,6 +13,7 @@ This project appears to be a Java application built with Gradle. It includes a `
 - All documentation shall be in english language
 - All rest endpoints have the prefix /api/v1/
 - The service layer is using an interface / implementation class approach.
+- All REST Endpoints are implemented in REST Controllers residing in the package com.tmv.core.controller
 
 ## Project Structure
 
