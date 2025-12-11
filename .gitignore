@@ -45,3 +45,7 @@ gradlew
 /src/main/resources/myserver.key
 /src/main/resources/server.csr
 /src/main/resources/thkrebs_ddns_net.pem
+/src/main/resources/private.key
+/src/main/resources/private.pem
+/src/main/resources/combined.pem
+
