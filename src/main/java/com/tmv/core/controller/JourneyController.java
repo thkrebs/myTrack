@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static com.tmv.core.util.Distance.calculateDistance;
 
@@ -274,6 +275,16 @@ public class JourneyController extends BaseController {
                 .map(mapper::toJourneyDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/api/v1/journeys/user/{username}")
+    @PreAuthorize("hasRole('GOD') or #username == authentication.name")
+    public ResponseEntity<List<JourneyDTO>> getJourneysForUser(@PathVariable String username) {
+        List<Journey> journeys = journeyService.getJourneysByUsername(username);
+        List<JourneyDTO> journeyDTOs = journeys.stream()
+                .map(mapper::toJourneyDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(journeyDTOs);
     }
 
 

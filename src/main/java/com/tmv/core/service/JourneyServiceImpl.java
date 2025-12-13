@@ -241,6 +241,13 @@ public class JourneyServiceImpl implements JourneyService {
         return activeJourneys.stream().findFirst();
     }
 
+    @Override
+    public List<Journey> getJourneysByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        return journeyRepository.findByOwner(user);
+    }
+
 
     private Position getCurrentPosition(Journey journey) {
         String activeIMEI = determineActiveImei(journey);
