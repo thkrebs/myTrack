@@ -104,6 +104,37 @@ paths:
         - bearerAuth: []
 
   # Journey Controller
+  /journeys/user/{username}:
+    get:
+      tags:
+        - Journey
+      summary: Get All Journeys for User
+      description: Retrieves a list of all journeys for a specific user.
+      operationId: getJourneysForUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose journeys are to be retrieved.
+      responses:
+        '200':
+          description: A list of the user's journeys.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JourneyDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+      security:
+        - bearerAuth: []
   /journeys/user/{username}/active:
     get:
       tags:
