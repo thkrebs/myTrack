@@ -5,6 +5,7 @@ import com.tmv.core.model.PasswordResetToken;
 import com.tmv.core.model.User;
 import com.tmv.core.persistence.PasswordResetTokenRepository;
 import com.tmv.core.persistence.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -37,21 +39,26 @@ public class UserService {
     }
 
     public Optional<User> findUserByEmail(String email) {
+        log.debug("Searching for user by email: {}", email);
         return userRepository.findByEmail(email);
     }
 
     @Transactional
     public String createPasswordResetTokenForUser(User user) {
+        log.debug("Creating password reset token for user: {}", user.getUsername());
         // Check if a token already exists for this user and delete it
         passwordResetTokenRepository.deleteByUser(user);
+        log.debug("Deleted any existing tokens for user.");
 
         String token = UUID.randomUUID().toString();
         PasswordResetToken myToken = new PasswordResetToken(token, user);
         passwordResetTokenRepository.save(myToken);
+        log.debug("Saved new token: {}", token);
         return token;
     }
 
     public String validatePasswordResetToken(String token) {
+        log.debug("Validating token: {}", token);
         final Optional<PasswordResetToken> passToken = passwordResetTokenRepository.findByToken(token);
 
         return !isTokenFound(passToken) ? "invalidToken"
@@ -73,7 +80,9 @@ public class UserService {
     }
 
     public void changeUserPassword(User user, String password) {
+        log.debug("Changing password for user: {}", user.getUsername());
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
+        log.debug("Password changed successfully.");
     }
 }
