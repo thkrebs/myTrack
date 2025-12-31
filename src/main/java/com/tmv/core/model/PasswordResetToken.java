@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "password_reset_token")
 public class PasswordResetToken {
 
     private static final int EXPIRATION = 60 * 24; // 24 hours in minutes
