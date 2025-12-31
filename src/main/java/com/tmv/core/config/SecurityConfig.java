@@ -68,6 +68,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/authenticate/**").permitAll()
                         .requestMatchers("/api/v1/refresh-token").permitAll()
+                        .requestMatchers("/api/v1/user/resetPassword").permitAll()
+                        .requestMatchers("/api/v1/user/savePassword").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
