@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS password_reset_token (
                                                     id BIGSERIAL PRIMARY KEY,
                                                     token VARCHAR(255) NOT NULL,
-    expiry_date TIMESTAMP NOT NULL,
+    expirydate TIMESTAMP NOT NULL,
     user_id BIGINT NOT NULL,
     CONSTRAINT fk_user_password_token FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE
     );
