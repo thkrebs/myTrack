@@ -15,6 +15,8 @@ tags:
     description: Endpoints for managing user features and settings.
   - name: Journey
     description: Endpoints for creating, managing, and retrieving journey data.
+  - name: ParkSpot
+    description: Endpoints for finding and managing parking spots.
   - name: Authentication
     description: Endpoints for user authentication and token management.
   - name: Imei
@@ -102,6 +104,152 @@ paths:
           description: User not found
       security:
         - bearerAuth: []
+
+  /user/{username}/profile:
+    get:
+      tags:
+        - User
+      summary: Get User Profile
+      description: Retrieves the full profile of a user. Accessible by the user themselves or an admin.
+      operationId: getUserProfile
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose profile is to be retrieved.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - User
+      summary: Update User Profile
+      description: Updates the user's own profile (username and email only). Accessible only by the user themselves.
+      operationId: updateUserProfile
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose profile is to be updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdateDTO'
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+      security:
+        - bearerAuth: []
+
+  /user/{username}/admin/profile:
+    put:
+      tags:
+        - User
+      summary: Admin Update User Profile
+      description: Updates the full user profile, including features and enabled status. Accessible only by admins (GOD role).
+      operationId: adminUpdateUserProfile
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The username of the user whose profile is to be updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileAdminUpdateDTO'
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+      security:
+        - bearerAuth: []
+
+  /user/resetPassword:
+    post:
+      tags:
+        - User
+      summary: Request Password Reset
+      description: Initiates the password reset process by sending an email with a reset token to the user.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestDTO'
+      responses:
+        '200':
+          description: Password reset email sent (if user exists).
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "If an account with that email exists, a password reset link has been sent."
+
+  /user/savePassword:
+    post:
+      tags:
+        - User
+      summary: Save New Password
+      description: Updates the user's password using a valid reset token.
+      operationId: savePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordSaveRequestDTO'
+      responses:
+        '200':
+          description: Password updated successfully.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Password reset successfully."
+        '400':
+          description: Invalid or expired token.
 
   # Journey Controller
   /journeys/user/{username}:
@@ -330,6 +478,38 @@ paths:
       security:
         - bearerAuth: []
 
+  /journeys/{journeyId}/overnight-parkings:
+    get:
+      tags:
+        - Journey
+      summary: Get All Overnight Parkings for a Journey
+      description: Retrieves a list of all overnight parking spots associated with a specific journey.
+      operationId: getOvernightParkingsForJourney
+      parameters:
+        - name: journeyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: A list of parking spots.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParkSpotDTO'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Journey not found
+      security:
+        - bearerAuth: []
+
   /journeys/{journeyId}/track:
     get:
       tags:
@@ -378,6 +558,47 @@ paths:
       security:
         - bearerAuth: []
         - apiTokenAuth: [] # Assuming API token can also be used
+
+  # ParkSpot Controller
+  /parkspots/nearby:
+    get:
+      tags:
+        - ParkSpot
+      summary: Find ParkSpots Nearby
+      description: Retrieves all parking spots within a given distance from a specified geographical point.
+      operationId: getNearbyParkSpots
+      parameters:
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: The longitude of the center point for the search.
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: The latitude of the center point for the search.
+        - name: distance
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 1000
+          description: The search radius in meters.
+      responses:
+        '200':
+          description: A list of nearby parking spots.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParkSpotDTO'
 
   # Imei Controller
   /imeis:
@@ -468,6 +689,50 @@ components:
           type: integer
           format: int32
           description: The package identifier for the user.
+    UserProfileDTO:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (yyyy-MM-dd HH:mm:ss)
+        features:
+          type: integer
+          format: int64
+        enabled:
+          type: boolean
+    UserProfileUpdateDTO:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+    UserProfileAdminUpdateDTO:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        features:
+          type: integer
+          format: int64
+        enabled:
+          type: boolean
     JourneyDTO:
       type: object
       properties:
@@ -584,4 +849,22 @@ components:
         - refreshToken
       properties:
         refreshToken:
+          type: string
+    PasswordResetRequestDTO:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+    PasswordSaveRequestDTO:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+        newPassword:
           type: string

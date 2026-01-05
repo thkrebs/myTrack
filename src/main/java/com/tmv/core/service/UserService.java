@@ -1,6 +1,10 @@
 package com.tmv.core.service;
 
 import com.tmv.core.dto.UserFeaturesDTO;
+import com.tmv.core.dto.UserProfileAdminUpdateDTO;
+import com.tmv.core.dto.UserProfileDTO;
+import com.tmv.core.dto.UserProfileUpdateDTO;
+import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.PasswordResetToken;
 import com.tmv.core.model.User;
 import com.tmv.core.persistence.PasswordResetTokenRepository;
@@ -46,7 +50,6 @@ public class UserService {
     @Transactional
     public String createPasswordResetTokenForUser(User user) {
         log.debug("Creating password reset token for user: {}", user.getUsername());
-        // Check if a token already exists for this user and delete it
         passwordResetTokenRepository.deleteByUser(user);
         log.debug("Deleted any existing tokens for user.");
 
@@ -84,5 +87,54 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
         log.debug("Password changed successfully.");
+    }
+
+    public Optional<UserProfileDTO> getUserProfile(String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> new UserProfileDTO(
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getCreatedAt(),
+                        user.getFeatures(),
+                        user.isEnabled()
+                ));
+    }
+
+    @Transactional
+    public UserProfileDTO updateUserProfile(String username, UserProfileUpdateDTO profileUpdate) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        user.setUsername(profileUpdate.getUsername());
+        user.setEmail(profileUpdate.getEmail());
+        User updatedUser = userRepository.save(user);
+
+        return new UserProfileDTO(
+                updatedUser.getUsername(),
+                updatedUser.getEmail(),
+                updatedUser.getCreatedAt(),
+                updatedUser.getFeatures(),
+                updatedUser.isEnabled()
+        );
+    }
+
+    @Transactional
+    public UserProfileDTO adminUpdateUserProfile(String username, UserProfileAdminUpdateDTO profileUpdate) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        user.setUsername(profileUpdate.getUsername());
+        user.setEmail(profileUpdate.getEmail());
+        user.setFeatures(profileUpdate.getFeatures());
+        user.setEnabled(profileUpdate.isEnabled());
+        User updatedUser = userRepository.save(user);
+
+        return new UserProfileDTO(
+                updatedUser.getUsername(),
+                updatedUser.getEmail(),
+                updatedUser.getCreatedAt(),
+                updatedUser.getFeatures(),
+                updatedUser.isEnabled()
+        );
     }
 }

@@ -48,7 +48,7 @@ public class PasswordResetController {
         log.info("Token created: {}", token);
         
         String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        String message = "We received a password reset request. To reset your password, use the following link: " + appUrl + "/reset-password?token=" + token;
+        String message = "We received a password reset request. To reset your password, use the following link: " + appUrl + "/savePassword?token=" + token;
         
         log.info("Sending email to: {}", user.get().getEmail());
         try {
