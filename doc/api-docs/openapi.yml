@@ -399,6 +399,38 @@ paths:
           description: Journey not found
       security:
         - bearerAuth: []
+    patch:
+      tags:
+        - Journey
+      summary: Patch Journey
+      description: Partially updates an existing journey by its ID. Only non-null fields in the request body will be updated.
+      operationId: patchJourney
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JourneyPatchDTO'
+      responses:
+        '200':
+          description: Journey updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyDTO'
+        '403':
+          description: Forbidden
+        '404':
+          description: Journey not found
+      security:
+        - bearerAuth: []
     delete:
       tags:
         - Journey
@@ -771,6 +803,24 @@ components:
         endDate:
           type: string
           format: date
+    JourneyPatchDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        trackedByImeis:
+          type: array
+          items:
+            type: integer
+            format: int64
     ImeiDTO:
       type: object
       properties:

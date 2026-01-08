@@ -1,5 +1,6 @@
 package com.tmv.core.service;
 
+import com.tmv.core.dto.JourneyPatchDTO;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceAlreadyExistsException;
 import com.tmv.core.exception.ResourceNotFoundException;
@@ -107,6 +108,37 @@ public class JourneyServiceImpl implements JourneyService {
                     newJourney.setId(id);
                     return journeyRepository.save(newJourney);
                 });
+    }
+
+    @Override
+    @Transactional
+    public Journey patchJourney(Long id, JourneyPatchDTO journeyPatch) {
+        Journey existingJourney = journeyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + id));
+
+        if (journeyPatch.getName() != null) {
+            existingJourney.setName(journeyPatch.getName());
+        }
+        if (journeyPatch.getDescription() != null) {
+            existingJourney.setDescription(journeyPatch.getDescription());
+        }
+        if (journeyPatch.getStartDate() != null) {
+            existingJourney.setStartDate(journeyPatch.getStartDate());
+        }
+        if (journeyPatch.getEndDate() != null) {
+            existingJourney.setEndDate(journeyPatch.getEndDate());
+        }
+        if (journeyPatch.getTrackedByImeis() != null) {
+            Set<Imei> imeis = new HashSet<>();
+            for (Long imeiId : journeyPatch.getTrackedByImeis()) {
+                Imei imei = imeiRepository.findById(imeiId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Imei not found with id: " + imeiId));
+                imeis.add(imei);
+            }
+            existingJourney.setTrackedByImeis(imeis);
+        }
+
+        return journeyRepository.save(existingJourney);
     }
 
     public Journey startJourney(Long id) {
@@ -246,6 +278,15 @@ public class JourneyServiceImpl implements JourneyService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
         return journeyRepository.findByOwner(user);
+    }
+
+    @Override
+    public List<ParkSpot> getOvernightParkSpots(Long journeyId) {
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Journey not found with id: " + journeyId));
+        return journey.getOvernightParkings().stream()
+                .map(OvernightParking::getParkSpot)
+                .collect(Collectors.toList());
     }
 
 

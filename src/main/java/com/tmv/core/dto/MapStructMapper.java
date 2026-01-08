@@ -69,8 +69,8 @@ public interface MapStructMapper {
     @Mapping(target = "parkspotId", source = "parkSpot.id")
     @Mapping(target = "name", expression = "java(overnightParking.getParkSpot().getName())")
     @Mapping(target = "description", expression = "java(overnightParking.getParkSpot().getDescription())")
-    @Mapping(target = "lat", expression = "java((float) overnightParking.getParkSpot().getPoint().getX())")
-    @Mapping(target = "lng", expression = "java((float) overnightParking.getParkSpot().getPoint().getY())")
+    @Mapping(target = "lat", expression = "java((float) overnightParking.getParkSpot().getPoint().getY())")
+    @Mapping(target = "lng", expression = "java((float) overnightParking.getParkSpot().getPoint().getX())")
     @Mapping(target = "overnightDate", source = "overnightDate")
     @Mapping(target = "wpPostId", source = "parkSpot.wpPostId")
     OvernightParkingFullDTO toOvernightParkingFullDTO(OvernightParking overnightParking);

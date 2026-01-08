@@ -5,14 +5,11 @@ import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Journey;
 import com.tmv.core.model.OvernightParking;
 import com.tmv.core.model.ParkSpot;
-import com.tmv.core.model.Position;
 import com.tmv.core.service.JourneyServiceImpl;
 import com.tmv.core.service.PositionServiceImpl;
 import com.tmv.core.util.Cache;
 import com.tmv.core.util.MultiFormatDateParser;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,8 +23,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.tmv.core.util.Distance.calculateDistance;
@@ -148,6 +146,14 @@ public class JourneyController extends BaseController {
         return ResponseEntity.ok(mapper.toJourneyDTO(updatedJourney));
     }
 
+    @PatchMapping("/api/v1/journeys/{id}")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#id)")
+    @ResponseBody
+    ResponseEntity<JourneyDTO> patchJourney(@PathVariable Long id, @RequestBody JourneyPatchDTO journeyPatch) {
+        Journey patchedJourney = journeyService.patchJourney(id, journeyPatch);
+        return ResponseEntity.ok(mapper.toJourneyDTO(patchedJourney));
+    }
+
     /**
      * Creates an overnight parking spot for a specific journey.
      *
@@ -167,6 +173,15 @@ public class JourneyController extends BaseController {
         ParkSpot createdParking = null;
         createdParking = journeyService.addOvernightParking(journeyId, name, description, createWPPost, date);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toParkSpotDTO(createdParking));
+    }
+
+    @GetMapping("/api/v1/journeys/{journeyId}/overnight-parkings")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
+    public ResponseEntity<List<ParkSpotDTO>> getOvernightParkingsForJourney(@PathVariable Long journeyId) {
+        List<ParkSpotDTO> parkSpots = journeyService.getOvernightParkSpots(journeyId).stream()
+                .map(mapper::toParkSpotDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(parkSpots);
     }
 
     @GetMapping("/api/v1/journeys/{journeyId}/nearbyParkspots")

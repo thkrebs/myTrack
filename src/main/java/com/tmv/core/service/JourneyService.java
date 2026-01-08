@@ -1,5 +1,6 @@
 package com.tmv.core.service;
 
+import com.tmv.core.dto.JourneyPatchDTO;
 import com.tmv.core.model.Journey;
 import com.tmv.core.model.OvernightParking;
 import com.tmv.core.model.ParkSpot;
@@ -18,6 +19,8 @@ public interface JourneyService {
     Optional<Journey> getJourneyById(Long id);
 
     Journey updateJourney(Long id, Journey newTrack);
+
+    Journey patchJourney(Long id, JourneyPatchDTO journeyPatch);
 
     void deleteJourney(Long id);
 
@@ -44,4 +47,6 @@ public interface JourneyService {
     Optional<Journey> getActiveJourney(String username);
 
     List<Journey> getJourneysByUsername(String username);
+
+    List<ParkSpot> getOvernightParkSpots(Long journeyId);
     }
