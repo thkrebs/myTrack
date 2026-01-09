@@ -48,7 +48,7 @@ import static com.tmv.core.util.Distance.calculateDistance;
 public class JourneyController extends BaseController {
 
     private final JourneyServiceImpl journeyService;
-    private final PositionServiceImpl positionService;
+   // private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
     @Autowired
@@ -64,9 +64,9 @@ public class JourneyController extends BaseController {
     private final int ID_CONCEAL = 1;
     private final int ID_FULL = 2;
 
-    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService, PositionServiceImpl positionService) {
+    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
         this.journeyService = journeyService;
-        this.positionService = positionService;
+      //  this.positionService = positionService;
         this.mapper = mapstructMapper;
     }
 

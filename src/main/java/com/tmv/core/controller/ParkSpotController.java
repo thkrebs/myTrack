@@ -3,7 +3,9 @@ package com.tmv.core.controller;
 import com.tmv.core.dto.ParkSpotDTO;
 import com.tmv.core.service.ParkSpotService;
 import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.service.ParkSpotServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +22,7 @@ public class ParkSpotController extends BaseController {
     private final MapStructMapper mapper;
 
     @Autowired
-    public ParkSpotController(ParkSpotService parkSpotService, MapStructMapper mapper) {
+    public ParkSpotController(ParkSpotService parkSpotService, @Qualifier("mapStructMapper") MapStructMapper mapper) {
         this.parkSpotService = parkSpotService;
         this.mapper = mapper;
     }

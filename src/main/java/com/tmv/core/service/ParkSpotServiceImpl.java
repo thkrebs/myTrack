@@ -18,12 +18,10 @@ import java.util.stream.Collectors;
 public class ParkSpotServiceImpl implements ParkSpotService {
 
     private final ParkSpotRepository parkSpotRepository;
-    private final JourneyRepository journeyRepository;
 
     @Autowired
-    public ParkSpotServiceImpl(ParkSpotRepository parkSpotRepository, JourneyRepository journeyRepository) {
+    public ParkSpotServiceImpl(ParkSpotRepository parkSpotRepository) {
         this.parkSpotRepository = parkSpotRepository;
-        this.journeyRepository = journeyRepository;
     }
 
     @Override
