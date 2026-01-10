@@ -1,6 +1,8 @@
 package com.tmv.core.service;
 
 import com.tmv.core.dto.JourneyPatchDTO;
+import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.dto.ParkSpotWithDateDTO;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceAlreadyExistsException;
 import com.tmv.core.exception.ResourceNotFoundException;
@@ -45,8 +47,9 @@ public class JourneyServiceImpl implements JourneyService {
     private final WordPressPostService wordPressPostService;
     private final PositionService positionService;
     private final UserRepository userRepository;
+    private final MapStructMapper mapper;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService, UserRepository userRepository) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService, UserRepository userRepository, MapStructMapper mapper) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
@@ -57,6 +60,7 @@ public class JourneyServiceImpl implements JourneyService {
         this.wordPressPostService = wordPressPostService;
         this.positionService = positionService;
         this.userRepository = userRepository;
+        this.mapper = mapper;
     }
 
     public LineString trackForJourneyBetween(Journey journeyEntity, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition) {
@@ -243,6 +247,31 @@ public class JourneyServiceImpl implements JourneyService {
     public List<ParkSpot> getNearbyParkSpots(Journey journey, long distanceInMeters) {
         Position lastPosition = getLastPositionForActiveImei(journey);
         return getParkspots(journey, lastPosition, distanceInMeters);
+    }
+
+    @Override
+    public List<ParkSpotWithDateDTO> getNearbyParkSpotsWithDate(Long journeyId, long distanceInMeters) {
+        Journey journey = getValidatedJourney(journeyId);
+        List<ParkSpot> nearbySpots = getNearbyParkSpots(journey, distanceInMeters);
+
+        return nearbySpots.stream().map(spot -> {
+            ParkSpotWithDateDTO dto = new ParkSpotWithDateDTO();
+            // Map basic fields manually or use mapper if possible (but mapper returns ParkSpotDTO)
+            // Using mapper to get base DTO and then copying properties is cleaner
+            var baseDto = mapper.toParkSpotDTO(spot);
+            dto.setId(baseDto.getId());
+            dto.setName(baseDto.getName());
+            dto.setDescription(baseDto.getDescription());
+            dto.setWpPostId(baseDto.getWpPostId());
+            dto.setLat(baseDto.getLat());
+            dto.setLng(baseDto.getLng());
+
+            // Find latest park date
+            Optional<LocalDate> latestDate = overnightParkingRepository.findLatestParkDate(journeyId, spot.getId());
+            dto.setParkDate(latestDate.orElse(null));
+
+            return dto;
+        }).collect(Collectors.toList());
     }
 
 

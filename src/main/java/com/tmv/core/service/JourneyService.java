@@ -1,6 +1,7 @@
 package com.tmv.core.service;
 
 import com.tmv.core.dto.JourneyPatchDTO;
+import com.tmv.core.dto.ParkSpotWithDateDTO;
 import com.tmv.core.model.Journey;
 import com.tmv.core.model.OvernightParking;
 import com.tmv.core.model.ParkSpot;
@@ -39,6 +40,8 @@ public interface JourneyService {
     LineString trackForJourneyBetween(Journey journeyId, LocalDateTime fromDateTime, LocalDateTime toDateTime, boolean concealLastPosition);
 
     List<ParkSpot> getNearbyParkSpots(Journey journey, long distanceInMeters);
+
+    List<ParkSpotWithDateDTO> getNearbyParkSpotsWithDate(Long journeyId, long distanceInMeters);
 
     Journey getValidatedJourney(Long journeyId) ;
 

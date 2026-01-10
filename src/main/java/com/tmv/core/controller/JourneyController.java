@@ -48,7 +48,7 @@ import static com.tmv.core.util.Distance.calculateDistance;
 public class JourneyController extends BaseController {
 
     private final JourneyServiceImpl journeyService;
-   // private final PositionServiceImpl positionService;
+    private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
     @Autowired
@@ -64,9 +64,9 @@ public class JourneyController extends BaseController {
     private final int ID_CONCEAL = 1;
     private final int ID_FULL = 2;
 
-    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
+    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService, PositionServiceImpl positionService) {
         this.journeyService = journeyService;
-      //  this.positionService = positionService;
+        this.positionService = positionService;
         this.mapper = mapstructMapper;
     }
 
@@ -195,6 +195,15 @@ public class JourneyController extends BaseController {
         List<ParkSpot> parkspots = journeyService.getNearbyParkSpots(journeyEntity, distance);
         return ResponseEntity.status(HttpStatus.OK).
                 body(mapper.toParkSpotDTO(parkspots));
+    }
+
+    @GetMapping("/api/v1/journeys/{journeyId}/nearbyOvernight-parking")
+    @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
+    public ResponseEntity<List<ParkSpotWithDateDTO>> getNearbyOvernightParkingForJourney(
+            @PathVariable Long journeyId,
+            @RequestParam(defaultValue = "50") long distance) {
+        List<ParkSpotWithDateDTO> parkSpots = journeyService.getNearbyParkSpotsWithDate(journeyId, distance);
+        return ResponseEntity.ok(parkSpots);
     }
 
     /**
