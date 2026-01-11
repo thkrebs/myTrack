@@ -1,9 +1,12 @@
 package com.tmv.core.controller;
 
 import com.tmv.core.config.CoreConfiguration;
+import com.tmv.core.dto.JourneyPatchDTO;
+import com.tmv.core.dto.ParkSpotWithDateDTO;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.Imei;
 import com.tmv.core.model.Journey;
+import com.tmv.core.model.ParkSpot;
 import com.tmv.core.model.User;
 import com.tmv.core.service.JourneySecurity;
 import com.tmv.core.service.JourneyService;
@@ -20,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,10 +33,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -273,6 +274,54 @@ class JourneyControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L)); // Validate ownership
 
+    }
+
+    @Test
+    void shouldPatchJourney() throws Exception {
+        Journey patchedJourney = new Journey();
+        patchedJourney.setId(1L);
+        patchedJourney.setName("Patched Name");
+
+        given(journeyService.patchJourney(eq(1L), any(JourneyPatchDTO.class))).willReturn(patchedJourney);
+
+        mockMvc.perform(patch("/api/v1/journeys/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Patched Name\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Patched Name")));
+    }
+
+    @Test
+    void shouldGetOvernightParkings() throws Exception {
+        ParkSpot spot = new ParkSpot();
+        spot.setId(10L);
+        spot.setName("Spot");
+
+        given(journeyService.getOvernightParkSpots(1L)).willReturn(List.of(spot));
+
+        mockMvc.perform(get("/api/v1/journeys/1/overnight-parkings")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(10)))
+                .andExpect(jsonPath("$[0].name", is("Spot")));
+    }
+
+    @Test
+    void shouldGetNearbyOvernightParking() throws Exception {
+        ParkSpotWithDateDTO dto = new ParkSpotWithDateDTO();
+        dto.setId(10L);
+        dto.setName("Spot");
+        dto.setParkDate(LocalDate.now());
+
+        given(journeyService.getNearbyParkSpotsWithDate(1L, 50)).willReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/journeys/1/nearbyOvernight-parking")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(10)))
+                .andExpect(jsonPath("$[0].name", is("Spot")))
+                .andExpect(jsonPath("$[0].parkDate", is(getDate(LocalDate.now()))));
     }
 
     public static LocalDate getDate(int offset) {

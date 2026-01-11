@@ -70,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/refresh-token").permitAll()
                         .requestMatchers("/api/v1/user/resetPassword").permitAll()
                         .requestMatchers("/api/v1/user/savePassword").permitAll()
+                        .requestMatchers("/api/v1/parkspots/nearby").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 )

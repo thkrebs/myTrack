@@ -1,6 +1,10 @@
 package com.tmv.core.service;
 
 import com.tmv.core.config.CoreConfiguration;
+import com.tmv.core.dto.JourneyPatchDTO;
+import com.tmv.core.dto.MapStructMapper;
+import com.tmv.core.dto.ParkSpotDTO;
+import com.tmv.core.dto.ParkSpotWithDateDTO;
 import com.tmv.core.exception.ConstraintViolationException;
 import com.tmv.core.exception.ResourceNotFoundException;
 import com.tmv.core.model.*;
@@ -62,6 +66,9 @@ class JourneyServiceImplTest {
     @Mock
     private EntityManager entityManagerMock;
 
+    @Mock
+    private MapStructMapper mapper;
+
     @InjectMocks
     private JourneyServiceImpl journeyService;
 
@@ -82,7 +89,7 @@ class JourneyServiceImplTest {
         testUser.setId(1L); // Mocked user ID
         testUser.setUsername("testuser");
 
-        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService, userRepository);
+        journeyService = new JourneyServiceImpl(positionRepository, journeyRepository, parkSpotRepository, overnightParkingRepository, imeiRepository, wordPressPostService, positionService, userRepository, mapper);
         // tried several different approaches to get the mocked entityManager into the journeyService which didn't work
         ReflectionTestUtils.setField(journeyService, "entityManager", entityManagerMock);
     }
@@ -469,5 +476,94 @@ class JourneyServiceImplTest {
             assertNotNull(createdJourney);
             assertEquals(authenticatedUser, createdJourney.getOwner());
         }
+    }
+
+    @Test
+    void patchJourney_success() {
+        Long journeyId = 1L;
+        Journey existingJourney = new Journey();
+        existingJourney.setId(journeyId);
+        existingJourney.setName("Old Name");
+        existingJourney.setDescription("Old Description");
+
+        JourneyPatchDTO patchDTO = new JourneyPatchDTO();
+        patchDTO.setName("New Name");
+
+        when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(existingJourney));
+        when(journeyRepository.save(any(Journey.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Journey result = journeyService.patchJourney(journeyId, patchDTO);
+
+        assertEquals("New Name", result.getName());
+        assertEquals("Old Description", result.getDescription()); // Should remain unchanged
+        verify(journeyRepository).save(existingJourney);
+    }
+
+    @Test
+    void patchJourney_notFound() {
+        Long journeyId = 1L;
+        JourneyPatchDTO patchDTO = new JourneyPatchDTO();
+
+        when(journeyRepository.findById(journeyId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> journeyService.patchJourney(journeyId, patchDTO));
+    }
+
+    @Test
+    void getOvernightParkSpots_success() {
+        Long journeyId = 1L;
+        Journey journey = new Journey();
+        journey.setId(journeyId);
+
+        ParkSpot spot1 = new ParkSpot();
+        spot1.setId(10L);
+        ParkSpot spot2 = new ParkSpot();
+        spot2.setId(20L);
+
+        OvernightParking op1 = new OvernightParking();
+        op1.setParkSpot(spot1);
+        OvernightParking op2 = new OvernightParking();
+        op2.setParkSpot(spot2);
+
+        journey.setOvernightParkings(Set.of(op1, op2));
+
+        when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
+
+        List<ParkSpot> result = journeyService.getOvernightParkSpots(journeyId);
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(spot1));
+        assertTrue(result.contains(spot2));
+    }
+
+    @Test
+    void getNearbyParkSpotsWithDate_success() {
+        Long journeyId = 1L;
+        long distance = 50;
+        Journey journey = new Journey();
+        journey.setId(journeyId);
+        journey.setTrackedByImeis(Set.of(new Imei("123", true, null, null, null, testUser, "", "", true)));
+
+        ParkSpot spot = new ParkSpot();
+        spot.setId(10L);
+        spot.setName("Spot");
+
+        ParkSpotDTO baseDto = new ParkSpotDTO();
+        baseDto.setId(10L);
+        baseDto.setName("Spot");
+
+        Position pos = new Position(1.0f, 2.0f, (short)0, (short)0, (byte)0, (short)0, "123", LocalDateTime.now(), 0);
+
+        when(journeyRepository.findById(journeyId)).thenReturn(Optional.of(journey));
+        when(positionRepository.findTopByImeiOrderByDateTimeDesc("123")).thenReturn(List.of(pos));
+        when(parkSpotRepository.findWithinDistance(anyDouble(), anyDouble(), eq((double)distance))).thenReturn(List.of(spot));
+        when(mapper.toParkSpotDTO(spot)).thenReturn(baseDto);
+        when(overnightParkingRepository.findLatestParkDate(journeyId, spot.getId())).thenReturn(Optional.of(LocalDate.now()));
+
+        List<ParkSpotWithDateDTO> result = journeyService.getNearbyParkSpotsWithDate(journeyId, distance);
+
+        assertEquals(1, result.size());
+        assertEquals(LocalDate.now(), result.get(0).getParkDate());
+        assertEquals("Spot", result.get(0).getName());
     }
 }

@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,7 +50,7 @@ public class JourneyServiceImpl implements JourneyService {
     private final UserRepository userRepository;
     private final MapStructMapper mapper;
 
-    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService, UserRepository userRepository, MapStructMapper mapper) {
+    JourneyServiceImpl(PositionRepository positionRepository, JourneyRepository journeyRepository, ParkSpotRepository parkSpotRepository, OvernightParkingRepository overnightParkingRepository, ImeiRepository imeiRepository, WordPressPostService wordPressPostService, PositionService positionService, UserRepository userRepository, @Qualifier("mapStructMapper") MapStructMapper mapper) {
         super();
         this.geomFactory = new GeometryFactory();
         this.positionRepository = positionRepository;
