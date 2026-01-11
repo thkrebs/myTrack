@@ -48,7 +48,7 @@ import static com.tmv.core.util.Distance.calculateDistance;
 public class JourneyController extends BaseController {
 
     private final JourneyServiceImpl journeyService;
-    private final PositionServiceImpl positionService;
+   // private final PositionServiceImpl positionService;
     private final MapStructMapper mapper;
 
     @Autowired
@@ -64,9 +64,9 @@ public class JourneyController extends BaseController {
     private final int ID_CONCEAL = 1;
     private final int ID_FULL = 2;
 
-    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService, PositionServiceImpl positionService) {
+    JourneyController(@Qualifier("mapStructMapper") MapStructMapper mapstructMapper, JourneyServiceImpl journeyService) {
         this.journeyService = journeyService;
-        this.positionService = positionService;
+      //  this.positionService = positionService;
         this.mapper = mapstructMapper;
     }
 
@@ -158,20 +158,16 @@ public class JourneyController extends BaseController {
      * Creates an overnight parking spot for a specific journey.
      *
      * @param journeyId   the ID of the journey for which the overnight parking spot is being created
-     * @param name        the name of the parking spot
-     * @param description an optional description of the parking spot
+     * @param createDto   the data for the new parking spot
      * @return a ResponseEntity containing the created ParkSpotDTO and the HTTP status code
      */
     @PostMapping("/api/v1/journeys/{journeyId}/overnight-parking")
     @PreAuthorize("hasRole('GOD') or @journeySecurity.isOwner(#journeyId)")
     public ResponseEntity<ParkSpotDTO> createOvernightParkingForJourney(
             @PathVariable Long journeyId,
-            @RequestParam(required = true) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) boolean createWPPost,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestBody CreateOvernightParkingDTO createDto) {
         ParkSpot createdParking = null;
-        createdParking = journeyService.addOvernightParking(journeyId, name, description, createWPPost, date);
+        createdParking = journeyService.addOvernightParking(journeyId, createDto.getName(), createDto.getDescription(), createDto.isCreateWPPost(), createDto.getDate());
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toParkSpotDTO(createdParking));
     }
 
