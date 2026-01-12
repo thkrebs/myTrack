@@ -40,25 +40,24 @@ public class PasswordResetController {
         if (user.isEmpty()) {
             log.warn("No user found with email: {}", passwordResetRequest.getEmail());
             // For security reasons, we shouldn't reveal if the email exists or not.
-            return ResponseEntity.ok("If an account with that email exists, a password reset link has been sent.");
+            return ResponseEntity.ok("If an account with that email exists, a password reset code has been sent.");
         }
 
         log.info("User found: {}. Creating reset token...", user.get().getUsername());
         String token = userService.createPasswordResetTokenForUser(user.get());
         log.info("Token created: {}", token);
         
-        String appUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        String message = "We received a password reset request. To reset your password, use the following link: " + appUrl + "/savePassword?token=" + token;
+        String message = "We received a password reset request. Your reset code is: " + token + "\n It expires after 24 hours. If you didn't request it, ignore this email. ";
         
         log.info("Sending email to: {}", user.get().getEmail());
         try {
-            emailService.sendSimpleMessage(user.get().getEmail(), "Reset Password", message);
+            emailService.sendSimpleMessage(user.get().getEmail(), "Password Reset Code", message);
             log.info("Email sent successfully.");
         } catch (Exception e) {
             log.error("Failed to send email", e);
         }
 
-        return ResponseEntity.ok("If an account with that email exists, a password reset link has been sent.");
+        return ResponseEntity.ok("If an account with that email exists, a password reset code has been sent.");
     }
 
     @PostMapping("/savePassword")

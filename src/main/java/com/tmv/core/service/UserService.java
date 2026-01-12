@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,11 +54,17 @@ public class UserService {
         passwordResetTokenRepository.deleteByUser(user);
         log.debug("Deleted any existing tokens for user.");
 
-        String token = UUID.randomUUID().toString();
+        String token = generateOTP();
         PasswordResetToken myToken = new PasswordResetToken(token, user);
         passwordResetTokenRepository.save(myToken);
         log.debug("Saved new token: {}", token);
         return token;
+    }
+
+    private String generateOTP() {
+        SecureRandom random = new SecureRandom();
+        int num = random.nextInt(1000000);
+        return String.format("%06d", num);
     }
 
     public String validatePasswordResetToken(String token) {
