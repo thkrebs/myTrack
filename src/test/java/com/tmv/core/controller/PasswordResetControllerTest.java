@@ -63,7 +63,7 @@ class PasswordResetControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
-                .andExpect(content().string("If an account with that email exists, a password reset link has been sent."));
+                .andExpect(content().string("If an account with that email exists, a password reset code has been sent."));
 
         verify(emailService, times(1)).sendSimpleMessage(eq(email), anyString(), anyString());
     }
@@ -82,7 +82,7 @@ class PasswordResetControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
-                .andExpect(content().string("If an account with that email exists, a password reset link has been sent."));
+                .andExpect(content().string("If an account with that email exists, a password reset code has been sent."));
 
         verify(emailService, never()).sendSimpleMessage(anyString(), anyString(), anyString());
     }
