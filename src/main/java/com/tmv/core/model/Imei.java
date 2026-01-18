@@ -8,6 +8,7 @@
    import lombok.NoArgsConstructor;
    import lombok.Setter;
 
+   import java.time.LocalDateTime;
    import java.util.Date;
    import java.util.Set;
 
@@ -31,6 +32,22 @@
        private String description;
        private String deviceType;
        private boolean shownOnMap;
+
+       // Geofencing fields
+       @Column(name = "geofence_center_latitude")
+       private Double geofenceCenterLatitude;
+
+       @Column(name = "geofence_center_longitude")
+       private Double geofenceCenterLongitude;
+
+       @Column(name = "geofence_radius")
+       private Integer geofenceRadius;
+
+       @Column(name = "geofence_active")
+       private Boolean geofenceActive;
+       
+       @Column(name = "last_geofence_alert_time")
+       private LocalDateTime lastGeofenceAlertTime;
 
        @ManyToMany(mappedBy = "trackedByImeis", fetch = FetchType.LAZY)
        private Set<Journey> journeys;

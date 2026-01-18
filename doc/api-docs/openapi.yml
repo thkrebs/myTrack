@@ -251,6 +251,49 @@ paths:
         '400':
           description: Invalid or expired token.
 
+  /user/devices:
+    post:
+      tags:
+        - User
+      summary: Register Device
+      description: Registers a device token for push notifications.
+      operationId: registerDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceDTO'
+      responses:
+        '200':
+          description: Device registered successfully.
+        '401':
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+
+  /user/devices/{token}:
+    delete:
+      tags:
+        - User
+      summary: Unregister Device
+      description: Unregisters a device token (e.g., on logout).
+      operationId: unregisterDevice
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The device token to unregister.
+      responses:
+        '204':
+          description: Device unregistered successfully.
+        '401':
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+
   # Journey Controller
   /journeys/user/{username}:
     get:
@@ -854,6 +897,16 @@ components:
         ownerId:
           type: integer
           format: int64
+        geofenceCenterLatitude:
+          type: number
+          format: double
+        geofenceCenterLongitude:
+          type: number
+          format: double
+        geofenceRadius:
+          type: integer
+        geofenceActive:
+          type: boolean
     ImeiSlimDTO:
       type: object
       properties:
@@ -919,6 +972,15 @@ components:
         date:
           type: string
           format: date
+    RegisterDeviceDTO:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
 
     # Request/Response Bodies
     AuthenticationRequest:

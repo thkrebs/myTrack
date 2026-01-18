@@ -29,4 +29,10 @@ public class ImeiDTO {
     private String description;
     private String deviceType;
     private boolean shownOnMap;
+
+    // Geofencing fields
+    private Double geofenceCenterLatitude;
+    private Double geofenceCenterLongitude;
+    private Integer geofenceRadius;
+    private Boolean geofenceActive;
 }

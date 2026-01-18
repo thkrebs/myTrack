@@ -24,6 +24,7 @@ public interface MapStructMapper {
 
     @Mapping(target = "journeys", ignore = true)
     @Mapping(target = "owner", ignore = true) // Ignore owner when mapping from the ImeiDTO to Entity
+    @Mapping(target = "lastGeofenceAlertTime", ignore = true)
     Imei toImeiEntity(ImeiDTO imeiDTO);
 
     //@Mapping(target = "parkSpots", source = "overnightParkings")
